@@ -1,10 +1,61 @@
 {% extends "base.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+  .jumbotron {
+    text-align: center;
+    background-color: white;
+    padding: 2rem 1rem;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  .form-container {
+    max-width: 1200px;  /* Increased max-width */
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #f7f7f7;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  .form-group label {
+    font-weight: 600;
+  }
+  .custom-checkbox {
+    margin-right: 1rem;
+  }
+  .form-control {
+    width: 100%;
+  }
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    font-size: 1.25rem;
+    border-radius: 0.3rem;
+  }
+  .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+  }
+  .image {
+    max-width: 100%;
+    height: auto;
+  }
+  .split_left2, .split_right2 {
+    padding: 1rem;
+  }
+</style>
 {% endblock %}
 
 {% block body %}
-<div class="jumbotron" style="text-align: center; background-color: white;">
+<div class="jumbotron">
   <h1 class="display-4">Select Protected Attributes</h1>
   <p class="lead">Protected attribute is an attribute that partitions a population into groups whose outcomes should
     have parity. Examples include race, gender, caste, and religion. Protected attributes are not universal, but are
@@ -12,57 +63,44 @@
     Male as the baseline to calculate any biases for other groups in the attribute Gender (for Female and Other for
     example).</p>
   <hr class="my-4">
-  <img class="image" src="{{url_for('static', filename='chain_2.png')}}">
+  <img class="image" src="{{ url_for('static', filename='chain_2.png') }}">
 </div>
 
-<div class="split_left2">
-  <h5>Select protected attributes to be audited for bias: </h5>
-</div>
-<div class="split_right2">
-  {% if not dataset %}
-  <h5 style="font-size: 15px;"> Pick your protected Attributes and the favorable label you want to mitigate bias from. Automatically all the other values will be considered unfavorable</h5>
-  {% else %}
-  <h5 style="font-size: 15px;"> By default, the favorable and unfavorable values of the attributes are already picked. No need to bother just the attribute you want to mitigate bias from. </h5>
-  {% endif %}
-</div>
-<div style="box-sizing: border-box; width: fit-content;">
-<form action="/metric" method="POST">
-  {% for attribute in data %}
-  <br>
-    {% if not ('Score' == attribute.name or 'Label_value'== attribute.name) %}
-    <fieldset class="form-group">
-      <div class="row">
-        <div class="custom-control custom-checkbox" style="left: 18px;">
-          <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
-          <label class="custom-control-label" for="{{ attribute.name }}">{{ attribute.name }}</label>
+<div class="form-container">
+  <h5>Select protected attributes to be audited for bias:</h5>
+  <form action="/metric" method="POST">
+    {% for attribute in data %}
+      {% if not ('Score' == attribute.name or 'Label_value' == attribute.name) %}
+      <fieldset class="form-group">
+        <div class="row align-items-center">
+          <div class="col-3">  <!-- Increased column width -->
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
+              <label class="custom-control-label" for="{{ attribute.name }}">{{ attribute.name }}</label>
+            </div>
+          </div>
+          <div class="col-9">  <!-- Increased column width -->
+            <select name="{{ attribute.name }}" class="form-control" id="{{ attribute.name }}">
+              <option>-- select an option --</option>
+              {% for value in attribute.values %}
+              <option value="{{ value }}">{{ value }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div class="col-sm-10" style="left: 550px; width:50%; position: absolute;">
-          {% if not dataset %}
-          <select name="{{ attribute.name }}" class="form-control" id="{{ attribute.name }}" style="position:relative;" style="width:50%;">
-            <option > -- select an option -- </option>
-            {% for value in attribute.values %}
-            <option value="{{ value }}">{{ value }}</option>
-            {% endfor %}
-          </select>
-          {% else %}
-            <input class="form-control" type="text" value="{{ attribute.values[0] }}" aria-label="Disabled input example" disabled readonly>
-          {% endif %}
-        </div>
-      </div>
+      </fieldset>
       {% endif %}
     {% endfor %}
-    <br>
-</form>
-<form hidden id="form" action="/metric" method="POST"><button class="btn btn-primary" type="submit">Next Step</button>
-</form>
-{% if not dataset %}    
-<button class="btn btn-primary" id="button" type="button">Next Step</button>
-{% else %}
-<button class="btn btn-primary" id="button2" type="button">Next Step</button>
-{% endif %}
+    <div class="text-center mt-4">
+      <button class="btn btn-primary" id="button" type="button">Next Step</button>
+    </div>
+  </form>
+  <form hidden id="form" action="/metric" method="POST">
+    <button class="btn btn-primary" type="submit">Next Step</button>
+  </form>
 </div>
 
-
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
   $(document).ready(function () {
     $('#button').click(function () {
@@ -74,10 +112,10 @@
           atts.push(checkboxes[i].value);
         }
       }
-      atts_n_values_picked=[];
+      atts_n_values_picked = [];
       for (var i = 0; i < atts.length; i++) {
-        var value = $('select[name='+ atts[i]+'] option').filter(':selected').val()
-        var selected = { "name": atts[i], "value": value}
+        var value = $('select[name=' + atts[i] + '] option').filter(':selected').val()
+        var selected = { "name": atts[i], "value": value }
         atts_n_values_picked.push(selected);
       }
       var formdata = JSON.stringify(atts_n_values_picked);
@@ -88,27 +126,6 @@
         dataType: "json",
         data: formdata,
         success: function () { $("#form").prop("hidden", false); $("#button").prop("hidden", true); }
-      })
-    });
-
-    $('#button2').click(function () {
-      var atts = [];
-      var checkboxes = document.getElementsByName("attribute");
-      var checkboxesChecked = [];
-      for (var i = 0; i < checkboxes.length; i++) {
-        if (checkboxes[i].checked) {
-          var selected = { "name": checkboxes[i].value }
-          atts.push(selected);
-        }
-      }
-      var formdata = JSON.stringify(atts);
-      $.ajax({
-        url: '/getAtts',
-        type: 'POST',
-        contentType: 'application/json; charset=UTF-8',
-        dataType: "json",
-        data: formdata,
-        success: function () { $("#form").prop("hidden", false); $("#button2").prop("hidden", true); }
       })
     });
   });
