@@ -1,0 +1,52 @@
+      <!-- <tr>
+        <td>
+          <input name="checkbox" type="checkbox" value="false_discovery_rate">
+          false_discovery_rate</input>
+        </td>
+        <td>False discovery rate is defined as the expected proportion of false positives among the declared significant
+          results. Formula: FDR=FP/(TP+FP) </td>
+      </tr>
+      <tr>
+        <td>
+          <input name="checkbox" type="checkbox" value="average_odds_difference"> Average_odds_difference</input>
+        </td>
+        <td>Average of difference in FPR and TPR for unprivileged and privileged groups:</td>
+      </tr>
+      <tr>
+        <td>
+          <input name="checkbox" type="checkbox" value="false_positive_rate">false_positive_rate
+          </input>
+        </td>
+        <td>False positive rate is defined as the expected proportion of false negatives to positives results. Formula:
+          FNR=FN/P </td>
+      </tr>
+      <tr>
+        <td>
+          <input name="checkbox" type="checkbox" value="false_omission_rate">false_omission_rate</input>
+        </td>
+        <td> The false omission rate is the proportion of the individuals with a negative test result for which the true
+          condition
+          is positive. Formula: FOR=FN/(TN+FN)</td>
+      </tr>
+      <tr>
+        <td>
+          <input name="checkbox" type="checkbox" value="false_negative_rate">false_negative_rate</input>
+        </td>
+        <td>False negative rate parity is achieved if the false negative rates in the subgroups are close to each other.
+          Formula: FNR=FN/(TP+FN) </td>
+      </tr>
+      <tr id="Proportional">
+        <td>
+          <input name="checkbox" type="checkbox" value="disparate_impact">disparate_impact</input>
+        </td>
+        <td>This is the ratio of probability of favorable outcomes between the unprivileged and privileged groups.</td>
+      </tr>
+      <tr id="eq_numbers">
+        <td>
+          <input name="checkbox" type="checkbox" value="statistical_parity_difference" >
+          statistical_parity_difference</input>
+        </td>
+        <td>Statistical imparity is the difference between the probability that a random individual drawn from
+          unprivileged is
+          labeled 1 and the probability that a random individual from privileged is labeled 1.</td>
+      </tr> -->

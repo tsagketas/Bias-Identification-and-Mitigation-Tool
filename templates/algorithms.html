@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block head %}
+{% endblock %}
+{% block body %}
+<div class="jumbotron" style="text-align: center; background-color: white;">
+  <h1 class="display-4">Select Mitigation Algorithm</h1>
+  <p class="lead">Bias mitigation algorithms attempt to improve the fairness metrics by modifying the training data, the
+    learning algorithm, or the predictions.
+    <br>These algorithm categories are known as pre-processing, in-processing, and post-processing, respectively
+  </p>
+  <hr class="my-4">
+  <img class="image" src="{{url_for('static', filename='chain_5.png')}}">
+  <p></p>
+  <br>
+  <br>
+  <div class="container" id="guide" style="width: 1000px;">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th scope="col">Pre-processing algorithms</th>
+          <th scope="col">In-processing algorithms</th>
+          <th scope="col">Post-processing algorithms</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            If the training data are allowed to be modified then, this category can be used.
+            <br>
+            <br>
+            <br>
+            <img class="image" src="{{url_for('static', filename='preproc.png')}}">
+            <br>
+            <br>
+            <br>
+            <b><u>Available algorithms</u></b>
+            <br>
+            <ul class="list-unstyled" >
+              <ul>
+                <li>Disparate Impact Remover</li>
+                <li>Reweighing</li>
+              </ul>
+            </ul>
+          </td>
+          <td>
+            If the learning algorithm is allowed to be modified then, this category can be used.
+            <br>
+            <br>
+            <br>
+            <img class="image" src="{{url_for('static', filename='inproc.png')}}">
+            <br>
+            <br>
+            <br>
+            <b><u>Available algorithms</u></b>
+            <br>
+            <ul class="list-unstyled" >
+              <ul>
+                <li>Adversarial Debiasing</li>
+                <li>Prejudice Remover Impact Remover</li>
+              </ul>
+            </ul>
+          </td>
+          <td>
+            If the the learned model has to be treated as a black box without any ability to modify the training data or learning algorithm, this category can be used.
+            <br>
+            <br>
+            <br>
+            <img class="image" src="{{url_for('static', filename='postproc.png')}}">
+            <br>
+            <br>
+            <br>
+            <b><u>Available algorithms</u></b>
+            <br>
+            <ul class="list-unstyled" >
+              <ul>
+                <li>Calibrated Equality of Odds</li>
+              </ul>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div>
+  <table class="table table-bordered table-striped" id="table">
+    <thead>
+      <tr>
+        <th style="width: 150px;">Mitigation Algorithm</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for attribute in algorithms %}
+      <tr id="{{ attribute }}">
+        <td>
+          <input name="checkbox" type="checkbox" value="{{ attribute }}">
+          {{ attribute }}</input>
+        </td>
+        <td> {{ description[loop.index-1] }} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<form  hidden id="form" action="/mitigation_report" method="POST"><button class="btn btn-primary" type="submit">Next Step</button></form>
+<button class="btn btn-primary" id="button" type="button">Next Step</button>
+
+<script>
+  $(document).ready(function () {
+    $('#button').click(function () {
+      var algs = [];
+      var checkboxes = document.getElementsByName("checkbox");
+      var checkboxesChecked = [];
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+          algs.push(checkboxes[i].value);
+        }
+      }
+      algs = { "name": algs };
+      var formdata = JSON.stringify(algs);
+      $.ajax({
+        url: '/mit_graphs',
+        type: 'POST',
+        contentType: 'application/json; charset=UTF-8',
+        dataType: "json",
+        data: formdata,
+        success: function () { console.log("yo");$("#form").prop("hidden", false); $("#button").prop("hidden", true); }
+      })
+    });
+  });
+</script>
+{% endblock %}

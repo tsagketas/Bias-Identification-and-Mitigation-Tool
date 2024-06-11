@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+  <br>
+  <div class="jumbotron" style="text-align: center; background-color: white;">
+    <h1 class="display-4">Welcome, to Bias Indentification and Mitigation Tool</h1>
+    <p class="lead">This is a bias auditing and mitigation tool, upload your dataset to check the fairness of your AI model. Simple tips will always be available through in each step of the process to guide you.
+      <br>The tool requires no backround knowlegde around algorithmic fairness or coding skills .</p>
+    <hr class="my-4">
+    <p><i>“Being good is easy, what is difficult is being just.”</i> - Victor Hugo</p>
+    <br>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('selection') }}" role="button">Continue</a>
+  </div>
+
+{% endblock %}

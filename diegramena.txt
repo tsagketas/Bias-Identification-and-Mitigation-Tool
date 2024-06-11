@@ -1,0 +1,508 @@
+var randomScalingFactor = function() {
+  return (Math.random() > 0.5 ? 1.0 : -1.0) * Math.round(Math.random() * 100);
+};
+var randomColor = function(opacity) {
+  return 'rgba(' + Math.round(Math.random() * 255) + ',' + Math.round(Math.random() * 255) + ',' + Math.round(Math.random() * 255) + ',' + (opacity || '.3') + ')';
+};
+var data = {
+  datasets: [{
+    label: "My First dataset",
+    data: [{
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }]
+  }, {
+    label: "My Second dataset",
+    data: [{
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }, {
+      x: randomScalingFactor(),
+      y: randomScalingFactor(),
+    }]
+  }]
+};
+data.datasets.forEach(function(dataset) {
+  dataset.borderColor = randomColor(0.4);
+  dataset.backgroundColor = randomColor(0.1);
+  dataset.pointBorderColor = randomColor(0.7);
+  dataset.pointBackgroundColor = randomColor(0.5);
+  dataset.pointBorderWidth = 1;
+});
+
+var ctx = document.getElementById("canvas").getContext("2d");
+window.myScatter = new Chart(ctx, {
+	type: 'scatter',
+  data: data,
+  options: {
+    scales: {
+      xAxes: [{
+        position: 'bottom',
+        gridLines: {
+          zeroLineColor: "rgba(0,255,0,1)"
+        },
+        scaleLabel: {
+          display: true,
+          labelString: 'x axis'
+        },
+      }],
+      yAxes: [{
+        position: 'left',
+        gridLines: {
+          zeroLineColor: "rgba(0,255,0,1)"
+        },
+        scaleLabel: {
+          display: true,
+          labelString: 'y axis'
+        },
+        ticks: {
+        	min: -100,
+          max: 100
+        }
+      }]
+    },
+    annotation: {
+      drawTime: "afterDraw",
+      events: ['dblclick'],
+      annotations: [{
+      	id: 'low-box',
+        type: 'box',
+        xScaleID: 'x-axis-1',
+        yScaleID: 'y-axis-1',
+        xMin: -100,
+        xMax: 100,
+        yMin: -100,
+        yMax: -40,
+        backgroundColor: 'rgba(255, 0, 0, 0.3)',
+        //borderColor: 'rgb(255, 0, 0)',
+        borderWidth: 1
+      },{
+      	id: 'hi-box',
+        type: 'box',
+        xScaleID: 'x-axis-1',
+        yScaleID: 'y-axis-1',
+        xMin: -100,
+        xMax: 100,
+        yMin: 100,
+        yMax: 40,
+        backgroundColor: 'rgba(255, 0, 0, 0.3)',
+        //borderColor: 'rgb(255, 0, 0)',
+        borderWidth: 1
+      }]
+    }
+  }
+});
+
+------------------------------------------------------------------------------------------------
+process.py
+from typing import List, Union, Dict
+import os
+import json
+import itertools
+from tqdm import tqdm
+
+# Modelling. Warnings will be used to silence various model warnings for tidier output
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.exceptions import DataConversionWarning
+import warnings
+import math
+
+# Data handling/display
+import pandas as pd
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+# IBM's fairness tooolbox:
+from aif360.datasets import BinaryLabelDataset,StandardDataset  # To handle the data
+from aif360.metrics import BinaryLabelDatasetMetric, ClassificationMetric  # For calculating metrics
+from aif360.explainers import MetricTextExplainer  # For explaining metrics
+from aif360.algorithms.preprocessing import Reweighing,DisparateImpactRemover
+from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing, EqOddsPostprocessing, RejectOptionClassification
+
+from sklearn.base import TransformerMixin
+from sklearn.pipeline import Pipeline, FeatureUnion
+
+# For the logistic regression model
+from sklearn.preprocessing import StandardScaler
+
+class MetricAdditions:
+    def explain(self,
+                disp: bool=True) -> Union[None, str]:
+        """Explain everything available for the given metric."""
+
+        # Find intersecting methods/attributes between MetricTextExplainer and provided metric.
+        inter = set(dir(self)).intersection(set(dir(self.metric)))
+
+        # Ignore private and dunder methods
+        metric_methods = [getattr(self, c) for c in inter if c.startswith('_') < 1]
+
+        # Call methods, join to new lines
+        s = "\n".join([f() for f in metric_methods if callable(f)])
+
+        if disp:
+            print(s)
+        else:
+            return s
+        
+        
+class MetricTextExplainer_(MetricTextExplainer, MetricAdditions):
+    """Combine explainer and .explain."""
+    pass
+
+def preprocess_dataset(df,catCols,numCols,targets):
+
+    atts=[]
+
+    df=df.fillna(df.mean())
+
+    for col in catCols:
+        df[col] = df[col].fillna("Missing value")
+
+    for col in catCols:
+        for c in df[col].values:
+            if (col+":"+c) not in atts:
+                colname=col+":"+ c
+                atts.append(colname)
+
+    for col in numCols:
+        for c in df[col].values:
+            if (col+":"+str(c)) not in atts:
+                colname=col+":"+str(c)
+                atts.append(colname)            
+
+    for col in catCols:
+        # df_onehot = pd.concat([df[col], pd.get_dummies(df[col])], axis=1)
+        df_onehot = pd.concat([df[col], pd.get_dummies(df[col]).rename(columns=lambda x:col +":"+x)], axis=1)
+        df_onehot=df_onehot.drop([col], axis=1)
+        df=df.drop([col], axis=1)
+        df=pd.concat([df,df_onehot],axis=1)
+
+    for col in numCols:
+        df_onehot = pd.concat([df[col], pd.get_dummies(df[col]).rename(columns=lambda x:col +":"+str(x))], axis=1)
+        df_onehot=df_onehot.drop([col], axis=1)
+        df=df.drop([col], axis=1)
+        df=pd.concat([df,df_onehot],axis=1)    
+
+    df2=pd.concat([targets['Label_value'],df],axis=1)
+    df2=df2.rename(columns = {'Label_value':'Score'})
+    df=pd.concat([targets['Score'],df],axis=1)
+
+    return df,df2,atts
+
+def get_fairness_metrics(path_to_csv):
+
+    data = pd.read_csv(path_to_csv)
+    df=data.copy()
+
+    target_cols=df[['Score','Label_value']]
+    df=df.drop(['Score', 'Label_value'],axis=1)
+    
+    catCols = df.select_dtypes(np.object).columns
+    numCols = df._get_numeric_data().columns
+    
+    score_data,label_data,attributes=preprocess_dataset(df,catCols,numCols,target_cols)
+    # print(attributes)
+
+    list_of_metrics=[]
+    list_of_b_metrics=[]
+    list_of_explainers=[]
+    list_of_datasets=[]
+
+    for att in attributes:#logika apla alazw to protected se attributes for att in attributes kai allazw ta mesa
+
+        truth = BinaryLabelDataset(df=label_data,
+                                        label_names=['Score'],
+                                        protected_attribute_names=[att],
+                                        favorable_label=1,
+                                        unfavorable_label=0,
+                                        )
+
+        preds = BinaryLabelDataset(df=score_data,
+                                        label_names=['Score'],
+                                        protected_attribute_names=[att],
+                                        favorable_label=1,
+                                        unfavorable_label=0,
+                                        )
+
+        metric=ClassificationMetric(truth, 
+                                        preds, 
+                                        unprivileged_groups=[{att: 0 }], 
+                                        privileged_groups=[{att: 1}],
+                                        )
+
+        metric2=BinaryLabelDatasetMetric( preds, 
+                                        unprivileged_groups=[{att: 0 }], 
+                                        privileged_groups=[{att: 1}],
+                                        )
+
+        explainer = MetricTextExplainer_(metric)
+        list_of_datasets.append(truth)                                                          
+        list_of_metrics.append(metric)
+        list_of_b_metrics.append(metric2)
+        list_of_explainers.append(explainer)
+
+    return list_of_metrics,list_of_b_metrics,list_of_explainers,attributes,list_of_datasets,label_data,score_data
+
+def fair_check(metric,objective,threshold):
+    if metric >= 0:
+        return  abs(metric - objective) <= threshold
+    else:
+        return abs(metric + objective) <= threshold
+
+def get_data(the_metrics,the_b_metrics,fairness_metrics,attributes):
+    #na prosthesw threshold
+    x=[]
+    objective_1=["consistency","disparate_impact","error_rate_ratio","error_rate_ratio","false_discovery_rate_ratio","false_negative_rate_ratio","false_omission_rate_ratio","false_positive_rate_ratio","negative_predictive_value"]
+
+    for metric in fairness_metrics:
+
+        values=[]
+        variables=[]
+        
+        for i in range(len(the_metrics)):
+            if metric=="disparate_impact" or metric=="mean_difference":
+                value=getattr(the_b_metrics[i], metric)()
+            else:
+                value=getattr(the_metrics[i], metric)()
+            if ((not math.isinf(value)) and (math.isnan(value)==False) ):
+                if ( metric in objective_1):
+                    objective=1
+                else:
+                    objective=0.0
+
+                if ( not fair_check(value,objective,0.4)):
+                    values.append(value)
+                    variables.append(attributes[i])
+
+        if ( len(variables)!=0 or len(values)!=0 ):
+            x.append({'Metric': metric,'Protected_Attributes':variables,'Values':values})        
+                
+    return x
+
+def mitigation_all(to_json,df_truth,df_preds,methods): 
+    mitigation_json=[]
+    temp=[]
+    counter=0
+    for method in methods:
+        temp={'Method': method, 'Data':[]}
+        values=[]
+        for element in to_json:
+            values=[]
+            mitigation_json_data={'Metric': element['Metric'], 'ID':counter, 'Protected_Attributes':element['Protected_Attributes'],'Values':values,'Biased_values':element['Values']}
+            for att in element['Protected_Attributes']:
+
+                dataset = BinaryLabelDataset(df=df_truth,
+                                            label_names=['Score'],
+                                            protected_attribute_names=[att],
+                                            favorable_label=1,
+                                            unfavorable_label=0,
+                                            )
+                
+                dataset_pred = BinaryLabelDataset(df=df_preds,
+                                            label_names=['Score'],
+                                            protected_attribute_names=[att],
+                                            favorable_label=1,
+                                            unfavorable_label=0,
+                                            )
+                
+                unprivileged_groups=[{att: 0 }]
+                privileged_groups=[{att: 1 }]
+                dataset_train, dataset_test =dataset.split([0.2], shuffle=False)
+                scale_orig = StandardScaler()
+
+                if (method=="Reweighing"):
+                    
+                    rw = Reweighing(unprivileged_groups=unprivileged_groups,privileged_groups=privileged_groups)
+                    rw_label_data = rw.fit_transform(dataset)
+                    
+                    X_train = scale_orig.fit_transform(dataset_train.features)
+                    y_train = dataset_train.labels.ravel()
+
+                    rw_label_data = rw.fit_transform(dataset_train)
+
+                    model=LogisticRegression()
+                    model.fit(X_train, y_train,sample_weight=rw_label_data.instance_weights)
+
+                    x_test=scale_orig.fit_transform(dataset_test.features)
+                    y_test=dataset_test.labels.ravel()
+
+                    y_test_pred = model.predict(x_test)
+                    arr = np.concatenate((dataset_train.labels, y_test_pred.reshape(-1,1)))
+                    letssee=dataset.copy()
+                    letssee.labels=arr
+                   
+                    what1=ClassificationMetric(letssee, 
+                                            dataset_pred, #i to allo me ta preds  
+                                            unprivileged_groups=[{att: 0 }], 
+                                            privileged_groups=[{att: 1}],
+                                            )
+
+                    what5=BinaryLabelDatasetMetric(letssee,unprivileged_groups=unprivileged_groups,privileged_groups=privileged_groups)
+
+                    value=getattr(what1, element['Metric'])()
+                    # print("to mono tou")
+                    # print(what5.disparate_impact())
+                    # print("ta alla")
+                    values.append(value)
+                        
+                if (method=="Disparate Impact Remover"):
+
+                    di=DisparateImpactRemover()
+                    dataset_train=di.fit_transform(dataset_train)
+                    dataset_test=di.fit_transform(dataset_train)
+
+                    X_train = scale_orig.fit_transform(dataset_train.features)
+                    y_train = dataset_train.labels.ravel()
+
+                    model=LogisticRegression()
+                    model.fit(X_train, y_train)
+
+                    x_test=scale_orig.fit_transform(dataset_test.features)
+                    y_test=dataset_test.labels.ravel()
+                    y_test_pred = model.predict(x_test)
+                    
+                    
+                    if (element['Metric']=='mean_difference' or element['Metric']=='disparate_impact'):
+                        x_test.labels=y_test_pred.reshape(-1,1)
+                        what2=BinaryLabelDatasetMetric(x_test,unprivileged_groups=unprivileged_groups,privileged_groups=privileged_groups)
+                    else:
+                        arr = np.concatenate((dataset_train.labels, y_test_pred.reshape(-1,1)))
+                    
+                        letssee=dataset.copy()
+                        letssee.labels=arr
+                        what2=ClassificationMetric(y_test_pred, 
+                                                dataset2, #i to allo me ta preds  
+                                                unprivileged_groups=[{att: 0 }], 
+                                                privileged_groups=[{att: 1}],
+                                                )
+                    
+                    value=getattr(what2, element['Metric'])()
+                    values.append(value)
+
+                if (method=="Calibrated Equality of Odds"):
+                    
+                   
+                    dataset2 = BinaryLabelDataset(df=df_preds,
+                                            label_names=['Score'],
+                                            protected_attribute_names=[att],
+                                            favorable_label=1,
+                                            unfavorable_label=0,
+                                            )
+                    
+
+                    cost_constraint = "weighted"
+                    randseed = 12345679
+
+                    CPP = CalibratedEqOddsPostprocessing(privileged_groups = [{att: 1}],
+                                     unprivileged_groups = [{att: 0 }],
+                                     cost_constraint=cost_constraint,
+                                     seed=randseed)
+
+                    CPP=CPP.fit(dataset,dataset2)
+                    y_test_pred = CPP.predict(dataset2)    
+
+                    if (element['Metric']=='mean_difference' or element['Metric']=='disparate_impact'):
+                        what2=BinaryLabelDatasetMetric(y_test_pred,unprivileged_groups=unprivileged_groups,privileged_groups=privileged_groups)
+                    else:
+                        what2=ClassificationMetric(y_test_pred, 
+                                                dataset2, #i to allo me ta preds  
+                                                unprivileged_groups=[{att: 0 }], 
+                                                privileged_groups=[{att: 1}],
+                                                )
+    
+                    value=getattr(what2, element['Metric'])()
+                    values.append(value)                
+
+                if (method=="Equality of Odds"):
+
+                    dataset2 = BinaryLabelDataset(df=df_preds,
+                                            label_names=['Score'],
+                                            protected_attribute_names=[att],
+                                            favorable_label=1,
+                                            unfavorable_label=0,
+                                            )
+
+                    randseed = 12345679
+
+                    EOPP = EqOddsPostprocessing(privileged_groups = [{att: 1}],
+                                     unprivileged_groups = [{att: 0 }],
+                                     seed=randseed)
+
+                    EOPP=EOPP.fit(dataset,dataset2)
+                    y_test_pred = EOPP.predict(dataset2)    
+
+                    if (element['Metric']=='mean_difference' or element['Metric']=='disparate_impact'):
+                        what2=BinaryLabelDatasetMetric(y_test_pred,unprivileged_groups=unprivileged_groups,privileged_groups=privileged_groups)
+                    else:
+                        what2=ClassificationMetric(y_test_pred, 
+                                                dataset2, #i to allo me ta preds  
+                                                unprivileged_groups=[{att: 0 }], 
+                                                privileged_groups=[{att: 1}],
+                                                )
+
+                    value=getattr(what2, element['Metric'])()
+                    values.append(value)
+                    
+            mitigation_json_data['Values']=values
+            temp['Data'].append(mitigation_json_data)
+            counter=counter+1
+            
+        mitigation_json.append(temp)    
+    
+    with open('data3.json', 'w') as f:
+        json.dump(mitigation_json, f)
+    return mitigation_json
+
+# fairness_metrics=['mean_difference','generalized_entropy_index','disparate_impact','average_odds_difference']
+# the_metrics,the_explainers,attributes,datasets,truth,score = get_fairness_metrics( path_to_csv='new_dataset.csv')
+# yo=get_data(the_metrics,fairness_metrics,attributes)
+# print(yo)
+
+# f = open('data.json',)
+# data = json.load(f)
+# yo2=mitigation_all(data,truth,score,['Reweighing'])
+# with open('data3.json', 'w') as f:
+#     json.dump(yo2, f)
+# print(yo2)
+
+
+

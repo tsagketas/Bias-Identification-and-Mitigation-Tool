@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+<div class="jumbotron" style="text-align: center; background-color: white;">
+  <h1 class="display-4">Select Fairness Metric</h1>
+  <p class="lead">This is the most important stage of the proccess, you need to choose the right metric(s) depending on
+    your problem. </p>
+  <hr class="my-4">
+  <img class="image" src="{{url_for('static', filename='chain_3.png')}}">
+  <p>If you feel a little lost, click <a id="dropGuide" style="color:blue;">here</a> and follow our quide to help you
+    with selection.</p>
+  <div class="container" id="guide" hidden style="width: 650px;">
+    <section id="visualisation">
+    </section>
+  </div>
+</div>
+
+<div>
+  <table class="table table-bordered table-striped" id="table">
+    <thead>
+      <tr>
+        <th style="width: 150px;">Fairness Audition Metric</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for attribute in metrics %}
+      <tr id="{{ attribute }}">
+        <td>
+          <input name="checkbox" type="checkbox" value="{{ attribute }}">
+          {{ attribute }}</input>
+        </td>
+        <td> {{ description[loop.index-1] }} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%if not dataset %}
+<div class="input-group">
+  <div class="input-group-prepend">
+    <span class="input-group-text" >Enter your Fairness Threshold (%) </span>
+  </div>
+  <input class="col-1 form-control" id="threshold" type="text">
+  <span class="input-group-text" >If a specific bias metric for a group is within this percentage of the reference group, this audit will pass</span>
+</div>
+{% else %}
+<input hidden class="col-1 form-control" id="threshold" type="text" value="0">
+{%endif %}
+<br>
+<form hidden id="form" action="/fairness_report" method="POST"><button class="btn btn-primary" type="submit">Next
+    Step</button>
+</form>
+<button class="btn btn-primary" id="button" type="button">Next Step</button>
+
+<script>
+  var data = {
+    "id": 1,
+    "type": "Root",
+    "description": "Choose type of representation of the data",
+    "children": [
+      {
+        "id": 2,
+        "name": "Disparate representation",
+        "type": "Type",
+        "description": "What do you need to select?",
+        "children": [
+          {
+            "id": "asnwer1",
+            "name": "Equal number of people from each group",
+            "type": "Organism",
+            "description": "Click me! And Check below the metric(s) that suit you",
+            "children": []
+          },
+          {
+            "id": "asnwer2",
+            "name": "Proportional precentage in the overall population",
+            "type": "Organism",
+            "description": "Click me! And Check below the metric(s) that suit you",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Disparate errors",
+        "type": "Type",
+        "description": "What are your interventions? ",
+        "children": [
+          {
+            "id": 7,
+            "name": "Punitive",
+            "type": "Organism",
+            "description": "Are you intervening with a very small % of the population?",
+            "children": [
+              {
+                "id": "#asnwer3",
+                "name": "Yes",
+                "type": "Organism",
+                "description": "Click me! And Check below the metric(s) that suit you",
+                "children": []
+              },
+              {
+                "id": "#asnwer4",
+                "name": "No",
+                "type": "Organism",
+                "description": "Click me! And Check below the metric(s) that suit you",
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "name": "Assistive",
+            "type": "Organism",
+            "description": "Are you intervening with a very small % of the population?",
+            "children": [
+              {
+                "id": "#asnwer5",
+                "name": "Yes",
+                "type": "Organism",
+                "description": "Click me! And Check below the metric(s) that suit you",
+                "children": []
+              },
+              {
+                "id": "#asnwer6",
+                "name": "No",
+                "type": "Organism",
+                "description": "Click me! And Check below the metric(s) that suit you",
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  var treePlugin = new d3.mitchTree.boxedTree()
+    .setData(data)
+    .setElement(document.getElementById("visualisation"))
+    .setIdAccessor(function (data) {
+      return data.id;
+    })
+    .setChildrenAccessor(function (data) {
+      return data.children;
+    })
+    .setBodyDisplayTextAccessor(function (data) {
+      return data.description;
+    })
+    .setTitleDisplayTextAccessor(function (data) {
+      return data.name;
+    })
+    .on("nodeClick", function (event) {
+      if (event.data.id=="asnwer1"){
+        var picked = document.querySelectorAll('#disparate_impact,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+      }
+      else if (event.data.id=="asnwer2"){
+        var picked = document.querySelectorAll('#mean_difference,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+      }
+      else if (event.data.id=="asnwer3"){
+        var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+      }
+      else if (event.data.id=="asnwer4"){
+        var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+
+      }
+      else if (event.data.id=="asnwer5"){
+        var picked = document.querySelectorAll('#mean_difference,#disparate_impact_difference,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+      }
+      else if (event.data.id=="asnwer6"){
+        var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+        picked.forEach(element => element.style.display = 'none');
+      }
+    })
+    .initialize();
+</script>
+
+<script>
+  $(document).ready(function () {
+    $("#dropGuide").click(function () {
+      if( $("#guide").prop("hidden")==true){
+        $("#guide").prop("hidden", false);
+      }
+      else{
+        $("#guide").prop("hidden", true);
+      }
+    });
+    $('#button').click(function () {
+      var metrics = [];
+      var checkboxes = document.getElementsByName("checkbox");
+      var threshold = document.getElementById("threshold").value;
+      if (threshold)
+      var checkboxesChecked = [];
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+          metrics.push(checkboxes[i].value);
+        }
+      }
+      metrics = { "name": metrics,"threshold":threshold};
+      var formdata = JSON.stringify(metrics);
+      $.ajax({
+        url: '/graphs',
+        type: 'POST',
+        contentType: 'application/json; charset=UTF-8',
+        dataType: "json",
+        data: formdata,
+        success: function () { $("#form").prop("hidden", false); $("#button").prop("hidden", true); }
+      })
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\astroncite{Baeza-Yates et~al.}{1999}]{baeza1999modern}
+Baeza-Yates, R., Ribeiro-Neto, B., et~al. (1999).
+\newblock {\em Modern information retrieval}, volume 463.
+\newblock ACM press New York.
+
+\bibitem[\protect\astroncite{Connolly and
+  Hoar}{2014}]{connolly2014fundamentals}
+Connolly, R. and Hoar, R. (2014).
+\newblock {\em Fundamentals of Web Development}.
+\newblock Always learning. Pearson.
+
+\bibitem[\protect\astroncite{Dunham}{2003}]{dunham2003data}
+Dunham, M. (2003).
+\newblock {\em Data Mining Introductory and Advanced Topics}.
+\newblock An Alan R. Apt book. Prentice Hall/Pearson Education.
+
+\end{thebibliography}

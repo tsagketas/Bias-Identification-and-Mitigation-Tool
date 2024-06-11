@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+{% if flag %}
+<br>
+<h1 style="font-family:sans-serif bold; text-align: center;">Your Model is Fair , All Fairness Tests Passed !</h1>
+<br>
+<img style="display: block; margin-left: auto; margin-right: auto; width: 30%" class="image" src="{{url_for('static', filename='success512.png')}}">>
+{% else %}
+<div class="jumbotron" style="text-align: center; background-color: white;">
+  <h1 class="display-4">Fairness Report</h1>
+  <p class="lead">The fairness report is presented below. Only attributes that are considered unfair based on the given the threshold and metric are presented.</p>
+  <hr class="my-4">
+  <img class="image" src="{{url_for('static', filename='chain_4.png')}}">
+  <br>
+  <p></p>
+  <br>
+</div>
+<div class="container">
+  {% for el in data %}
+  <div class="row steps">
+    <div class="col-8">
+  <table class="table table-striped ">
+    <thead>
+      <tr>
+        <h3 style="font-family:sans-serif bold">{{el['Metric']|tojson}}</h1>
+          {%if el['Metric']=='disparate_impact' %}
+              <p>The ideal value of this metric is 1.0</p>
+          {% else %}
+              <p>The ideal value of this metric is 0.0</p>
+          {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+        <script type="text/javascript"
+          src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
+        <canvas id={{el['Metric']|tojson}} class="rounded float-right"></canvas>
+        <script>
+          var thrsh = {{ threshold| tojson}} / 100;
+          var metrics= ["disparate_impact"];
+          var given_metric={{ el['Metric']| tojson }};
+
+          if (thrsh != 0){
+            if(metrics.includes(given_metric)){
+              ymin= thrsh;
+              ymax= 2-thrsh;
+            }else{
+              ymin=1-thrsh;
+              ymax=-1+thrsh;
+              
+            }
+          }else
+          {
+            ymin=0;
+            ymax=0;
+          }
+          uniqueid={{ loop.index }};
+          labels = {{ el['Atts_to_show'] | tojson | safe }}
+          values = {{ el['Values'] | tojson }}
+          
+          var ctx = document.getElementById({{ el['Metric']| tojson }});
+          var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: {{ el['Metric']| tojson }},
+            data: values,
+            backgroundColor: [
+            'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+            'rgba(255,99,132,1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)',
+              'rgba(255,99,132,1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)',
+              'rgba(255,99,132,1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)',
+              'rgba(255,99,132,1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+          }]
+            },
+          options: {
+            scales: {
+              yAxes: [{
+                id: uniqueid
+                // ticks: {
+                //   beginAtZero: false
+                // }
+              }]
+            },
+            legend: {
+              display: false
+            },
+            annotation: {
+              annotations: [{
+                id: 'box1',
+                type: 'box',
+                yScaleID: uniqueid,
+                yMin: ymin,
+                yMax: ymax,
+                label:'fair zone',
+                backgroundColor: 'rgba(100, 100, 100, 0.2)',
+                borderColor: 'rgba(100, 100, 100, 0.2)',
+              }]
+            }
+          }
+          });
+
+        </script>
+        <!-- <div>
+        <img src="{{url_for('static', filename='mean_difference.png')}}" class="rounded float-right"
+          style="width:25%; height:10%;">
+      </div> -->
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="col-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><b>Model Performance Metrics</b></li>
+      <li class="list-group-item">Accuracy: {{ "%0.2f"|format(details[0]["Accuracy"]) }}</li>
+      <li class="list-group-item">Precision: {{ "%0.2f"|format(details[0]["Precision"]) }}</li>
+      <li class="list-group-item">Recall: {{ "%0.2f"|format(details[0]["Recall"]) }}</li>
+      <li class="list-group-item">True negatives:{{ details[0]["True negatives"] }}</li>
+      <li class="list-group-item">False positives: {{ details[0]["False positives"] }}</li>
+      <li class="list-group-item">False negatives: {{ details[0]["False negatives"] }}</li>
+      <li class="list-group-item">True positives: {{ details[0]["True positives"] }}</li>
+    </ul>
+  </div>
+  </div>
+  <br>
+  <br>
+  {%endfor%}
+</div>
+<div style="height: 100px; position: relative;" >
+  <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);" class="btn btn-primary btn-lg" href="{{ url_for('algorithms') }}" role="button">Next Step</a>
+</div>
+{% endif %}
+{% endblock %}
