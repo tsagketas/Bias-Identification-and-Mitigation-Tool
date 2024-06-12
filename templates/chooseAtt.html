@@ -139,142 +139,131 @@
 <script>
   $(document).ready(function () {
     $('#attributeForm').on('click', '.add-intersection', function () {
-      var attribute = $(this).data('attribute');
-      var $row = $(this).closest('.attribute-row');
-      var existingAttrName = attribute;
-      var existingPrivilegedValue = $row.find('select[name="privileged_' + attribute + '"] option:selected').val();
+        var attribute = $(this).data('attribute');
+        var $row = $(this).closest('.attribute-row');
+        var existingAttrName = attribute;
+        var existingPrivilegedValue = $row.find('select[name="privileged_' + attribute + '"] option:selected').val();
 
-      var newElements = `
-        <div class="attribute-row intersection-row">
-          <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option value="">Select Attribute</option>
-            {% for attr in data %}
-            {% if attr.name != '${existingAttrName}' %}
-            <option value="{{ attr.name }}">{{ attr.name }}</option>
-            {% endif %}
-            {% endfor %}
-          </select>
-          <select name="intersection_privileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option value="">Privileged</option>
-          </select>
-          <select name="intersection_unprivileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option value="">Unprivileged</option>
-          </select>
-          <button type="button" class="btn btn-danger remove-intersection" style="flex: 0 0 220px;">Remove</button>
-        </div>
-        <div class="separator"></div>
-      `;
-      $row.after(newElements);
-      $(this).hide();
+        var newElements = `
+            <div class="attribute-row intersection-row">
+              <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
+                <option value="">Select Attribute</option>
+                {% for attr in data %}
+                {% if attr.name != '${existingAttrName}' %}
+                <option value="{{ attr.name }}">{{ attr.name }}</option>
+                {% endif %}
+                {% endfor %}
+              </select>
+              <select name="intersection_privileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
+                <option value="">Privileged</option>
+              </select>
+              <select name="intersection_unprivileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
+                <option value="">Unprivileged</option>
+              </select>
+              <button type="button" class="btn btn-danger remove-intersection" style="flex: 0 0 220px;">Remove</button>
+            </div>
+            <div class="separator"></div>
+          `;
+        $row.after(newElements);
+        $(this).hide();
 
-      var $newRow = $row.next('.intersection-row');
+        var $newRow = $row.next('.intersection-row');
 
-      $newRow.find(`select[name="intersection_attribute_${attribute}"]`).change(function () {
-        var selectedAttr = $(this).val();
-        var privilegedSelect = $newRow.find(`select[name="intersection_privileged_${attribute}"]`);
-        var unprivilegedSelect = $newRow.find(`select[name="intersection_unprivileged_${attribute}"]`);
+        $newRow.find(`select[name="intersection_attribute_${attribute}"]`).change(function () {
+            var selectedAttr = $(this).val();
+            var privilegedSelect = $newRow.find(`select[name="intersection_privileged_${attribute}"]`);
+            var unprivilegedSelect = $newRow.find(`select[name="intersection_unprivileged_${attribute}"]`);
 
-        privilegedSelect.html('<option value="">Privileged</option>');
-        unprivilegedSelect.html('<option value="">Unprivileged</option>');
+            privilegedSelect.html('<option value="">Privileged</option>');
+            unprivilegedSelect.html('<option value="">Unprivileged</option>');
 
-        if (selectedAttr) {
-          {% for attr in data %}
-          if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}') {
-            {% for val in attr.values %}
-            privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
-            if ("{{ val }}" !== '${existingPrivilegedValue}') {
-              unprivilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+            if (selectedAttr) {
+                {% for attr in data %}
+                if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}') {
+                    {% for val in attr.values %}
+                    privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+                    if ("{{ val }}" !== '${existingPrivilegedValue}') {
+                        unprivilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+                    }
+                    {% endfor %}
+                }
+                {% endfor %}
             }
-            {% endfor %}
-          }
-          {% endfor %}
-        }
 
-        privilegedSelect.change(function () {
-          var selectedPrivileged = $(this).val();
-          unprivilegedSelect.find('option').show();
-          unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
+            privilegedSelect.change(function () {
+                var selectedPrivileged = $(this).val();
+                unprivilegedSelect.find('option').show();
+                unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
+            });
         });
-      });
     });
 
     $('#attributeForm').on('click', '.remove-intersection', function () {
-      var $row = $(this).closest('.intersection-row');
-      $row.prev('.attribute-row').find('.add-intersection').show();
-      $row.next('.separator').remove();
-      $row.remove();
+        var $row = $(this).closest('.intersection-row');
+        $row.prev('.attribute-row').find('.add-intersection').show();
+        $row.next('.separator').remove();
+        $row.remove();
     });
 
     $('#button').click(function () {
-  var atts = [];
-  var checkboxes = document.getElementsByName("attribute");
-  var atts_n_values_picked = [];
+        var atts_n_values_picked = [];
 
-  // Loop through all selected checkboxes
-  for (var i = 0; i < checkboxes.length; i++) {
-    if (checkboxes[i].checked) {
-      var attributeName = checkboxes[i].value;
-      var privilegedValue = $('select[name="privileged_' + attributeName + '"]').val();
-      var unprivilegedValue = $('select[name="unprivileged_' + attributeName + '"]').val();
+        // Loop through all selected checkboxes
+        $('input[name="attribute"]:checked').each(function () {
+            var attributeName = $(this).val();
+            var privilegedValue = $('select[name="privileged_' + attributeName + '"]').val();
+            var unprivilegedValue = $('select[name="unprivileged_' + attributeName + '"]').val();
 
-      // Construct the object for the selected attribute
-      var selectedAttribute = {
-        "attribute": attributeName,
-        "privileged": privilegedValue,
-        "unprivileged": unprivilegedValue,
-        "intersection": []
-      };
+            // Construct the object for the selected attribute
+            var selectedAttribute = {
+                "attribute": attributeName,
+                "privileged": privilegedValue,
+                "unprivileged": unprivilegedValue,
+                "intersection": []
+            };
 
-      // Include intersectional attributes
-      var intersectionalAttributes = document.querySelectorAll('.intersection-row select');
-      intersectionalAttributes.forEach(function (select) {
-        var attributePrefix = "intersection_attribute_" + attributeName;
-        console.log("Attribute Prefix:", attributePrefix);
-        console.log("Select Name:", select.name);
-        if (select.name.startsWith(attributePrefix)) {
-          console.log("Intersectional Attribute Selected:", select.value);
-          var intersectedAttributeName = select.value;
-          var intersectedPrivilegedValue =  $('select[name="intersection_privileged_' + intersectedAttributeName + '"]').val();
-          var intersectedUnprivilegedValue =  $('select[name="intersection_unprivileged_' + intersectedAttributeName + '"]').val();
+            // Include intersectional attributes
+            $(`.intersection-row`).each(function () {
+                var intersectedAttributeName = $(this).find(`select[name="intersection_attribute_${attributeName}"]`).val();
+                var intersectedPrivilegedValue = $(this).find(`select[name="intersection_privileged_${attributeName}"]`).val();
+                var intersectedUnprivilegedValue = $(this).find(`select[name="intersection_unprivileged_${attributeName}"]`).val();
 
-          // Construct the object for the intersectional attribute
-          var intersectionAttribute = {
-            "attribute": intersectedAttributeName,
-            "privileged": intersectedPrivilegedValue,
-            "unprivileged": intersectedUnprivilegedValue
-          };
+                if (intersectedAttributeName) {
+                    // Construct the object for the intersectional attribute
+                    var intersectionAttribute = {
+                        "attribute": intersectedAttributeName,
+                        "privileged": intersectedPrivilegedValue,
+                        "unprivileged": intersectedUnprivilegedValue
+                    };
 
-          selectedAttribute.intersection.push(intersectionAttribute); // Add the intersectional attribute to the array
-        }
-      });
+                    selectedAttribute.intersection.push(intersectionAttribute); // Add the intersectional attribute to the array
+                }
+            });
 
-      atts_n_values_picked.push(selectedAttribute); // Add the selected attribute to the main array
-    }
-  }
+            atts_n_values_picked.push(selectedAttribute); // Add the selected attribute to the main array
+        });
 
-  // Log the structure of the JSON data
-  console.log(atts_n_values_picked);
-  // Commented out AJAX call
-  /*
-  var formdata = JSON.stringify(atts_n_values_picked);
-  $.ajax({
-    url: '/getAtts',
-    type: 'POST',
-    contentType: 'application/json; charset=UTF-8',
-    dataType: "json",
-    data: formdata,
-    success: function () { $("#form").prop("hidden", false); $("#button2").prop("hidden", true); }
-  });
-  */
-});
-
+       // AJAX call to /metric route
+        $.ajax({
+            url: '/metric',
+            type: 'POST',
+            contentType: 'application/json; charset=UTF-8',
+            data: JSON.stringify(atts_n_values_picked),
+            success: function (response) {
+                window.location.href = "/metric"; // Redirect to the metric page
+            },
+            error: function (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
 
     $('.privileged-select').change(function () {
-      var attribute = $(this).attr('name').replace('privileged_', '');
-      var selectedPrivileged = $(this).val();
-      $(`select[name="unprivileged_${attribute}"] option`).show();
-      $(`select[name="unprivileged_${attribute}"] option[value="${selectedPrivileged}"]`).hide();
+        var attribute = $(this).attr('name').replace('privileged_', '');
+        var selectedPrivileged = $(this).val();
+        $(`select[name="unprivileged_${attribute}"] option`).show();
+        $(`select[name="unprivileged_${attribute}"] option[value="${selectedPrivileged}"]`).hide();
     });
-  });
+});
 </script>
 {% endblock %}
