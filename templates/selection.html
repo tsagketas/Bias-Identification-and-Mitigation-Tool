@@ -1,67 +1,74 @@
 {% extends "base.html" %}
 
 {% block head %}
+<!-- Additional page-specific head content can go here -->
 {% endblock %}
 
 {% block body %}
-<div class="jumbotron" style="text-align: center; background-color: white;">
+<div class="jumbotron">
   <h1 class="display-4">Data Auditing</h1>
-  <p class="lead">In this stage of the proccess you need to upload your dataset. You can always try our demo datasets to get a hang of the tool.</p>
+  <p class="lead">In this stage of the process you need to upload your dataset. You can always try our demo datasets to get a hang of the tool.</p>
   <hr class="my-4">
   <img class="image" src="{{url_for('static', filename='chain_1.png')}}">
 </div>
-<!-- <h3>Na pw kati edw i oxi ?</h3> -->
-<ul class="nav nav-tabs" id="myTab" role="tablist">
-  <li class="nav-item" role="presentation" id="demo_datasets">
-    <a style="color: #0d0d1b;" class="nav-link active" id="demo" data-toggle="tab" href="#home" role="tab"
-      aria-controls="home" aria-selected="true">Demo Datasets</a>
-  </li>
-</ul>
-<div>
-  <table class="table table-bordered table-striped">
-    <tbody>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism Risk Assessment</a>
-        </td>
-        <td> Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole
-          officers for scoring criminal defendant’s likelihood of reoffending (recidivism).</td>
-      </tr>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data Set</a>
-        </td>
-        <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income" dataset.</td>
-      </tr>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data Set</a>
-        </td>
-        <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
-      </tr>
-    </tbody>
-  </table>
-  <br>
+
+<div class="form-container">
   <ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item" role="presentation" id="demo_datasets">
-      <a style="color: #0d0d1b;" class="nav-link active" id="demo" data-toggle="tab" href="#home" role="tab"
-        aria-controls="home" aria-selected="true">Upload your own Data</a>
+      <a class="nav-link active" id="demo" data-toggle="tab" href="#home" role="tab"
+        aria-controls="home" aria-selected="true" style="color: #0d0d1b;">Demo Datasets</a>
     </li>
   </ul>
-  <br>
   <div>
-    <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data">
-      <div class="form-group mb-2"><br><input type="file" class="form-control-file" name="file" id="file"></div><button
-        id="upload" class="btn btn-primary" type="submit">Upload</button>
-    </form>
-    <a href="" class="links2" onclick="exampleData()">Click to see, the dataset structure example</a>
+    <table class="table table-bordered table-striped">
+      <tbody>
+        <tr>
+          <td>
+            <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism Risk Assessment</a>
+          </td>
+          <td> Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole
+            officers for scoring criminal defendant’s likelihood of reoffending (recidivism).</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data Set</a>
+          </td>
+          <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income" dataset.</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data Set</a>
+          </td>
+          <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item" role="presentation" id="upload_data">
+        <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab"
+          aria-controls="upload" aria-selected="true" style="color: #0d0d1b;">Upload your own Data</a>
+      </li>
+    </ul>
+    <br>
+    <div class="tab-content" id="myTabContent">
+      <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+        <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data">
+          <div class="form-group mb-2">
+            <input type="file" class="form-control-file btn-sm" name="file" id="file">
+          </div>
+          <button id="upload" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.75rem;" type="submit">Upload</button>
+        </form>
+        <a href="" class="links2" onclick="exampleData()" style="display: block; margin-top: 0.5rem;">Click to see the dataset structure example</a>
+      </div>
+    </div>
   </div>
-  </body>
+</div>
 
-  <script>
-    function exampleData() {
-      var myWindow = window.open("", "MsgWindow", "width=800, height=500");
-      myWindow.document.write("Score column = Model's prediction <br> Label column = Real outcome <img src='{{url_for('static', filename='example.png')}}'>");
-    }
-  </script>
-  {% endblock %}
+<script>
+  function exampleData() {
+    var myWindow = window.open("", "MsgWindow", "width=800, height=500");
+    myWindow.document.write("Score column = Model's prediction <br> Label column = Real outcome <img src='{{url_for('static', filename='example.png')}}'>");
+  }
+</script>
+{% endblock %}

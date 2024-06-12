@@ -5,24 +5,20 @@
 <style>
   .jumbotron {
     text-align: center;
-    background-color: white;
+    background-color: #f8f9fa;
     padding: 2rem 1rem;
     border: 1px solid #e3e3e3;
     border-radius: 0.3rem;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   }
   .form-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 45%;
+    margin: 2rem auto;
     padding: 2rem;
-    background-color: #f7f7f7;
+    background-color: #ffffff;
     border: 1px solid #e3e3e3;
     border-radius: 0.3rem;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    overflow-x: auto; /* Ensure overflow is handled */
-  }
-  .form-group {
-    margin-bottom: 1.5rem;
   }
   .form-group label {
     font-weight: 600;
@@ -31,57 +27,64 @@
     margin-right: 1rem;
   }
   .form-control {
-    width: auto;
-    min-width: 150px; /* Minimum width for the dropdowns */
+    width: 100%;
   }
   .btn-primary {
     background-color: #007bff;
     border-color: #007bff;
     color: #fff;
-    padding: 0.5rem 1.25rem;
-    font-size: 1.25rem;
-    border-radius: 0.3rem;
   }
   .btn-primary:hover {
     background-color: #0056b3;
     border-color: #004085;
   }
+  .btn-secondary, .btn-danger {
+    font-size: 0.875rem;
+    border-radius: 0.3rem;
+  }
   .btn-secondary {
     background-color: #6c757d;
     border-color: #6c757d;
     color: #fff;
-    padding: 0.25rem 0.5rem;  /* Made the button smaller */
-    font-size: 0.875rem;  /* Made the button smaller */
-    border-radius: 0.3rem;
   }
   .btn-secondary:hover {
     background-color: #5a6268;
     border-color: #545b62;
   }
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
   .image {
     max-width: 100%;
     height: auto;
   }
-  .split_left2, .split_right2 {
-    padding: 1rem;
+  .attribute-row, .intersection-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
   }
-  .row.align-items-center .col {
-    flex: 0 0 auto;
-    width: auto;
-    margin-right: 0.5rem;  /* Added space between the dropdowns */
+  .attribute-row > * {
+    margin-right: 1rem;
+    flex: 1;
   }
-  .row.align-items-center .col-wide {
-    flex: 0 0 18%; /* Adjusted width to ensure everything fits in one line */
-    max-width: 18%;
+  .intersection-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
   }
-  .row.align-items-center .col-button {
-    flex: 0 0 4%;
-    max-width: 4%;
-    text-align: center;
+  .intersection-container .form-control,
+  .intersection-container .btn {
+    margin-bottom: 1rem;
   }
-  .row.align-items-center .col-intersection {
-    flex: 0 0 18%; /* Adjusted width to ensure everything fits in one line */
-    max-width: 18%;
+  .intersection-container .btn {
+    margin-left: 1rem;
   }
 </style>
 {% endblock %}
@@ -89,66 +92,37 @@
 {% block body %}
 <div class="jumbotron">
   <h1 class="display-4">Select Protected Attributes</h1>
-  <p class="lead">Choose attributes that you want to check for fairness, such as race or gender. Select the attribute and the value you consider as the reference group. The tool will then compare other groups against this reference group to find any biases.</p>
+  <p class="lead">Choose attributes to check for fairness, such as race or gender. Select the attribute and the reference group value. The tool will compare other groups against this reference group to identify biases.</p>
   <hr class="my-4">
-  <img class="image" src="{{ url_for('static', filename='chain_2.png') }}">
+  <img class="image" src="{{ url_for('static', filename='chain_2.png') }}" alt="Process Illustration">
 </div>
 
 <div class="form-container">
   <h5>Select protected attributes to be audited for bias:</h5>
+  <br>
   <form id="attributeForm" action="/metric" method="POST">
     {% for attribute in data %}
-      {% if not ('Score' == attribute.name or 'Label_value' == attribute.name) %}
-      <fieldset class="form-group">
-        <div class="row align-items-center" id="row_{{ attribute.name }}">
-          <div class="col-wide">
-            <div class="custom-control custom-checkbox">
-              <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
-              <label class="custom-control-label" for="{{ attribute.name }}">{{ attribute.name }}</label>
-            </div>
-          </div>
-          <div class="col-wide">
-            <select name="privileged_{{ attribute.name }}" class="form-control">
-              <option>Privileged</option>
-              {% for value in attribute.values %}
-              <option value="{{ value }}">{{ value }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-wide">
-            <select name="unprivileged_{{ attribute.name }}" class="form-control">
-              <option>Unprivileged</option>
-              {% for value in attribute.values %}
-              <option value="{{ value }}">{{ value }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-button">
-            <button type="button" class="btn btn-secondary add-intersection" data-attribute="{{ attribute.name }}">+</button>
-          </div>
-        </div>
-        <div class="row align-items-center intersection-row" id="intersection_row_{{ attribute.name }}" style="display:none;">
-          <div class="col-intersection">
-            <select name="intersection_attribute_{{ attribute.name }}" class="form-control">
-              <option>Select Attribute</option>
-              {% for attribute in data %}
-              <option value="{{ attribute.name }}">{{ attribute.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-intersection">
-            <select name="intersection_privileged_{{ attribute.name }}" class="form-control">
-              <option>Privileged</option>
-            </select>
-          </div>
-          <div class="col-intersection">
-            <select name="intersection_unprivileged_{{ attribute.name }}" class="form-control">
-              <option>Unprivileged</option>
-            </select>
-          </div>
-        </div>
-      </fieldset>
-      {% endif %}
+    {% if not ('Score' == attribute.name or 'Label_value' == attribute.name) %}
+    <div class="attribute-row" id="row_{{ attribute.name }}">
+      <div class="custom-control custom-checkbox col-auto" style="flex: 0 0 170px;">
+        <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
+        <label class="custom-control-label" for="{{ attribute.name }}">{{ attribute.name }}</label>
+      </div>
+      <select name="privileged_{{ attribute.name }}" class="form-control" style="flex: 0 0 170px;">
+        <option>Privileged</option>
+        {% for value in attribute.values %}
+        <option value="{{ value }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+      <select name="unprivileged_{{ attribute.name }}" class="form-control" style="flex: 0 0 170px;">
+        <option>Unprivileged</option>
+        {% for value in attribute.values %}
+        <option value="{{ value }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-secondary add-intersection" data-attribute="{{ attribute.name }}" style="flex: 0 0 220px;">Add Intersectional Group</button>
+    </div>
+    {% endif %}
     {% endfor %}
     <div class="text-center mt-4">
       <button class="btn btn-primary" id="button" type="button">Next Step</button>
@@ -161,17 +135,43 @@
   $(document).ready(function () {
     $('#attributeForm').on('click', '.add-intersection', function () {
       var attribute = $(this).data('attribute');
-      var attributeOptions = `{% for attribute in data %}<option value="{{ attribute.name }}">{{ attribute.name }}</option>{% endfor %}`;
-      var intersectionRow = $(`#intersection_row_${attribute}`);
-      intersectionRow.show();
+      var $row = $(this).closest('.attribute-row');
+      var newElements = `
+        <div class="attribute-row intersection-row">
+          <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
+            <option>Select Attribute</option>
+            {% for attr in data %}
+            <option value="{{ attr.name }}">{{ attr.name }}</option>
+            {% endfor %}
+          </select>
+          <select name="intersection_privileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
+            <option>Privileged</option>
+            {% for attr in data %}
+            {% for val in attr.values %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+            {% endfor %}
+          </select>
+          <select name="intersection_unprivileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
+            <option>Unprivileged</option>
+            {% for attr in data %}
+            {% for val in attr.values %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+            {% endfor %}
+          </select>
+          <button type="button" class="btn btn-danger remove-intersection" style="flex: 0 0 220px;">Remove</button>
+        </div>
+        <br>
+      `;
+      $row.after(newElements);
+      $(this).hide();
 
-      // Update options for the intersection values based on the selected attribute
       $(`select[name="intersection_attribute_${attribute}"]`).change(function () {
         var selectedAttr = $(this).val();
         var privilegedSelect = $(`select[name="intersection_privileged_${attribute}"]`);
         var unprivilegedSelect = $(`select[name="intersection_unprivileged_${attribute}"]`);
 
-        // Update privileged and unprivileged select options
         privilegedSelect.html('<option>Privileged</option>');
         unprivilegedSelect.html('<option>Unprivileged</option>');
 
@@ -184,13 +184,18 @@
         }
         {% endfor %}
 
-        // Ensure unprivileged dropdown does not show the selected privileged value
         privilegedSelect.change(function () {
           var selectedPrivileged = $(this).val();
           unprivilegedSelect.find('option').show();
           unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
         });
       });
+    });
+
+    $('#attributeForm').on('click', '.remove-intersection', function () {
+      var $row = $(this).closest('.intersection-row');
+      $row.prev('.attribute-row').find('.add-intersection').show();
+      $row.remove();
     });
 
     $('#button').click(function () {
@@ -205,16 +210,21 @@
           atts_n_values_picked.push(selected);
 
           // Check if there are intersectional attributes
-          var intersectionAttr = $(`select[name="intersection_attribute_${checkboxes[i].value}"] option`).filter(':selected').val();
-          var intersectionPrivileged = $(`select[name="intersection_privileged_${checkboxes[i].value}"] option`).filter(':selected').val();
-          var intersectionUnprivileged = $(`select[name="intersection_unprivileged_${checkboxes[i].value}"] option`).filter(':selected').val();
-          if (intersectionAttr && intersectionPrivileged && intersectionUnprivileged) {
-            selected["intersection"] = {
-              "attribute": intersectionAttr,
-              "privileged": intersectionPrivileged,
-              "unprivileged": intersectionUnprivileged
-            };
-          }
+          $(`select[name^="intersection_attribute_${checkboxes[i].value}"]`).each(function() {
+            var intersectionAttr = $(this).val();
+            var intersectionPrivileged = $(this).closest('.intersection-row').find(`select[name="intersection_privileged_${checkboxes[i].value}"] option:selected`).val();
+            var intersectionUnprivileged = $(this).closest('.intersection-row').find(`select[name="intersection_unprivileged_${checkboxes[i].value}"] option:selected`).val();
+            if (intersectionAttr && intersectionPrivileged && intersectionUnprivileged) {
+              if (!selected["intersection"]) {
+                selected["intersection"] = [];
+              }
+              selected["intersection"].push({
+                "attribute": intersectionAttr,
+                "privileged": intersectionPrivileged,
+                "unprivileged": intersectionUnprivileged
+              });
+            }
+          });
         }
       }
       if (atts_n_values_picked.length > 0) {
