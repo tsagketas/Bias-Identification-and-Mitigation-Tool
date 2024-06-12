@@ -86,6 +86,10 @@
   .intersection-container .btn {
     margin-left: 1rem;
   }
+  .separator {
+    border-top: 2px solid #e3e3e3;
+    margin: 1rem 0;
+  }
 </style>
 {% endblock %}
 
@@ -108,20 +112,21 @@
         <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
         <label class="custom-control-label" for="{{ attribute.name }}">{{ attribute.name }}</label>
       </div>
-      <select name="privileged_{{ attribute.name }}" class="form-control" style="flex: 0 0 170px;">
-        <option>Privileged</option>
+      <select name="privileged_{{ attribute.name }}" class="form-control privileged-select" style="flex: 0 0 170px;">
+        <option value="">Privileged</option>
         {% for value in attribute.values %}
         <option value="{{ value }}">{{ value }}</option>
         {% endfor %}
       </select>
-      <select name="unprivileged_{{ attribute.name }}" class="form-control" style="flex: 0 0 170px;">
-        <option>Unprivileged</option>
+      <select name="unprivileged_{{ attribute.name }}" class="form-control unprivileged-select" style="flex: 0 0 170px;">
+        <option value="">Unprivileged</option>
         {% for value in attribute.values %}
         <option value="{{ value }}">{{ value }}</option>
         {% endfor %}
       </select>
       <button type="button" class="btn btn-secondary add-intersection" data-attribute="{{ attribute.name }}" style="flex: 0 0 220px;">Add Intersectional Group</button>
     </div>
+    <div class="separator"></div>
     {% endif %}
     {% endfor %}
     <div class="text-center mt-4">
@@ -136,53 +141,54 @@
     $('#attributeForm').on('click', '.add-intersection', function () {
       var attribute = $(this).data('attribute');
       var $row = $(this).closest('.attribute-row');
+      var existingAttrName = attribute;
+      var existingPrivilegedValue = $row.find('select[name="privileged_' + attribute + '"] option:selected').val();
+
       var newElements = `
         <div class="attribute-row intersection-row">
           <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option>Select Attribute</option>
+            <option value="">Select Attribute</option>
             {% for attr in data %}
+            {% if attr.name != '${existingAttrName}' %}
             <option value="{{ attr.name }}">{{ attr.name }}</option>
+            {% endif %}
             {% endfor %}
           </select>
           <select name="intersection_privileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option>Privileged</option>
-            {% for attr in data %}
-            {% for val in attr.values %}
-            <option value="{{ val }}">{{ val }}</option>
-            {% endfor %}
-            {% endfor %}
+            <option value="">Privileged</option>
           </select>
           <select name="intersection_unprivileged_${attribute}" class="form-control" style="flex: 0 0 170px;">
-            <option>Unprivileged</option>
-            {% for attr in data %}
-            {% for val in attr.values %}
-            <option value="{{ val }}">{{ val }}</option>
-            {% endfor %}
-            {% endfor %}
+            <option value="">Unprivileged</option>
           </select>
           <button type="button" class="btn btn-danger remove-intersection" style="flex: 0 0 220px;">Remove</button>
         </div>
-        <br>
+        <div class="separator"></div>
       `;
       $row.after(newElements);
       $(this).hide();
 
-      $(`select[name="intersection_attribute_${attribute}"]`).change(function () {
+      var $newRow = $row.next('.intersection-row');
+
+      $newRow.find(`select[name="intersection_attribute_${attribute}"]`).change(function () {
         var selectedAttr = $(this).val();
-        var privilegedSelect = $(`select[name="intersection_privileged_${attribute}"]`);
-        var unprivilegedSelect = $(`select[name="intersection_unprivileged_${attribute}"]`);
+        var privilegedSelect = $newRow.find(`select[name="intersection_privileged_${attribute}"]`);
+        var unprivilegedSelect = $newRow.find(`select[name="intersection_unprivileged_${attribute}"]`);
 
-        privilegedSelect.html('<option>Privileged</option>');
-        unprivilegedSelect.html('<option>Unprivileged</option>');
+        privilegedSelect.html('<option value="">Privileged</option>');
+        unprivilegedSelect.html('<option value="">Unprivileged</option>');
 
-        {% for attr in data %}
-        if (selectedAttr === "{{ attr.name }}") {
-          {% for val in attr.values %}
-          privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
-          unprivilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+        if (selectedAttr) {
+          {% for attr in data %}
+          if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}') {
+            {% for val in attr.values %}
+            privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+            if ("{{ val }}" !== '${existingPrivilegedValue}') {
+              unprivilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
+            }
+            {% endfor %}
+          }
           {% endfor %}
         }
-        {% endfor %}
 
         privilegedSelect.change(function () {
           var selectedPrivileged = $(this).val();
@@ -195,6 +201,7 @@
     $('#attributeForm').on('click', '.remove-intersection', function () {
       var $row = $(this).closest('.intersection-row');
       $row.prev('.attribute-row').find('.add-intersection').show();
+      $row.next('.separator').remove();
       $row.remove();
     });
 
@@ -235,6 +242,13 @@
       } else {
         alert("Please select at least one attribute and its value.");
       }
+    });
+
+    $('.privileged-select').change(function () {
+      var attribute = $(this).attr('name').replace('privileged_', '');
+      var selectedPrivileged = $(this).val();
+      $(`select[name="unprivileged_${attribute}"] option`).show();
+      $(`select[name="unprivileged_${attribute}"] option[value="${selectedPrivileged}"]`).hide();
     });
   });
 </script>
