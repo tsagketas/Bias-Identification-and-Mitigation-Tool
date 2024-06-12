@@ -4,6 +4,13 @@
 <!-- Additional page-specific head content can go here -->
 {% endblock %}
 
+<style>
+  #upload {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+  }
+</style>
+
 {% block body %}
 <div class="jumbotron">
   <h1 class="display-4">Data Auditing</h1>
@@ -53,11 +60,11 @@
     <br>
     <div class="tab-content" id="myTabContent">
       <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
-        <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data">
+        <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
           <div class="form-group mb-2">
             <input type="file" class="form-control-file btn-sm" name="file" id="file">
           </div>
-          <button id="upload" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.75rem;" type="submit">Upload</button>
+          <button id="upload" class="btn btn-primary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.9rem;" type="submit">Upload</button>
         </form>
         <a href="" class="links2" onclick="exampleData()" style="display: block; margin-top: 0.5rem;">Click to see the dataset structure example</a>
       </div>
@@ -69,6 +76,15 @@
   function exampleData() {
     var myWindow = window.open("", "MsgWindow", "width=800, height=500");
     myWindow.document.write("Score column = Model's prediction <br> Label column = Real outcome <img src='{{url_for('static', filename='example.png')}}'>");
+  }
+
+  function validateForm() {
+    var fileInput = document.getElementById('file');
+    if (fileInput.value === "") {
+      alert("Please choose a file to upload.");
+      return false;
+    }
+    return true;
   }
 </script>
 {% endblock %}
