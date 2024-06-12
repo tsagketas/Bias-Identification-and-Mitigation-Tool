@@ -206,43 +206,68 @@
     });
 
     $('#button').click(function () {
-      var atts_n_values_picked = [];
-      var checkboxes = document.getElementsByName("attribute");
-      for (var i = 0; i < checkboxes.length; i++) {
-        if (checkboxes[i].checked) {
-          var value = $('select[name="privileged_' + checkboxes[i].value + '"] option').filter(':selected').val();
-          var privileged = $('select[name="privileged_' + checkboxes[i].value + '"] option').filter(':selected').val();
-          var unprivileged = $('select[name="unprivileged_' + checkboxes[i].value + '"] option').filter(':selected').val();
-          var selected = { "name": checkboxes[i].value, "value": value, "privileged": privileged, "unprivileged": unprivileged };
-          atts_n_values_picked.push(selected);
+  var atts = [];
+  var checkboxes = document.getElementsByName("attribute");
+  var atts_n_values_picked = [];
 
-          // Check if there are intersectional attributes
-          $(`select[name^="intersection_attribute_${checkboxes[i].value}"]`).each(function() {
-            var intersectionAttr = $(this).val();
-            var intersectionPrivileged = $(this).closest('.intersection-row').find(`select[name="intersection_privileged_${checkboxes[i].value}"] option:selected`).val();
-            var intersectionUnprivileged = $(this).closest('.intersection-row').find(`select[name="intersection_unprivileged_${checkboxes[i].value}"] option:selected`).val();
-            if (intersectionAttr && intersectionPrivileged && intersectionUnprivileged) {
-              if (!selected["intersection"]) {
-                selected["intersection"] = [];
-              }
-              selected["intersection"].push({
-                "attribute": intersectionAttr,
-                "privileged": intersectionPrivileged,
-                "unprivileged": intersectionUnprivileged
-              });
-            }
-          });
+  // Loop through all selected checkboxes
+  for (var i = 0; i < checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      var attributeName = checkboxes[i].value;
+      var privilegedValue = $('select[name="privileged_' + attributeName + '"]').val();
+      var unprivilegedValue = $('select[name="unprivileged_' + attributeName + '"]').val();
+
+      // Construct the object for the selected attribute
+      var selectedAttribute = {
+        "attribute": attributeName,
+        "privileged": privilegedValue,
+        "unprivileged": unprivilegedValue,
+        "intersection": []
+      };
+
+      // Include intersectional attributes
+      var intersectionalAttributes = document.querySelectorAll('.intersection-row select');
+      intersectionalAttributes.forEach(function (select) {
+        var attributePrefix = "intersection_attribute_" + attributeName;
+        console.log("Attribute Prefix:", attributePrefix);
+        console.log("Select Name:", select.name);
+        if (select.name.startsWith(attributePrefix)) {
+          console.log("Intersectional Attribute Selected:", select.value);
+          var intersectedAttributeName = select.value;
+          var intersectedPrivilegedValue =  $('select[name="intersection_privileged_' + intersectedAttributeName + '"]').val();
+          var intersectedUnprivilegedValue =  $('select[name="intersection_unprivileged_' + intersectedAttributeName + '"]').val();
+
+          // Construct the object for the intersectional attribute
+          var intersectionAttribute = {
+            "attribute": intersectedAttributeName,
+            "privileged": intersectedPrivilegedValue,
+            "unprivileged": intersectedUnprivilegedValue
+          };
+
+          selectedAttribute.intersection.push(intersectionAttribute); // Add the intersectional attribute to the array
         }
-      }
-      if (atts_n_values_picked.length > 0) {
-        var form = $('#attributeForm');
-        var hiddenInput = $('<input>').attr('type', 'hidden').attr('name', 'selected_attributes').attr('value', JSON.stringify(atts_n_values_picked));
-        form.append(hiddenInput);
-        form.submit();
-      } else {
-        alert("Please select at least one attribute and its value.");
-      }
-    });
+      });
+
+      atts_n_values_picked.push(selectedAttribute); // Add the selected attribute to the main array
+    }
+  }
+
+  // Log the structure of the JSON data
+  console.log(atts_n_values_picked);
+  // Commented out AJAX call
+  /*
+  var formdata = JSON.stringify(atts_n_values_picked);
+  $.ajax({
+    url: '/getAtts',
+    type: 'POST',
+    contentType: 'application/json; charset=UTF-8',
+    dataType: "json",
+    data: formdata,
+    success: function () { $("#form").prop("hidden", false); $("#button2").prop("hidden", true); }
+  });
+  */
+});
+
 
     $('.privileged-select').change(function () {
       var attribute = $(this).attr('name').replace('privileged_', '');
