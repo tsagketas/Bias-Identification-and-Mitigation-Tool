@@ -16,13 +16,16 @@ TEMPLATES_AUTO_RELOAD = True
 
 global protected_variables, fairness_metrics, mitigation_algorithms, protected_variables_values
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/selection', methods=['GET', 'POST'])
 def selection():
     return render_template("selection.html")
+
 
 @app.route('/Choose_att', defaults={'dataset': None}, methods=['GET', 'POST'])
 @app.route('/Choose_att/<dataset>', methods=['GET', 'POST'])
@@ -65,47 +68,36 @@ def Choose_att(dataset):
         return render_template("chooseAtt.html", data=data, dataset=dataset)
         # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
 
+
 @app.route('/metric', methods=['GET', 'POST'])
 def metric():
-    # if request.method == "POST":
-    #     app.config['atts_n_values_picked'] = request.get_json()
-    #
-    # html_content = "<html><body>"
-    # html_content += "<h1>Fairness Metrics</h1><ul>"
-    #
-    # for metric, descr in zip(constants.fairness_metrics, constants.fairness_metrics_descr):
-    #     html_content += f"<li><strong>{metric}:</strong> {descr}</li>"
-    #
-    # html_content += "</ul></body></html>"
-    #
-    # return Response(metric, mimetype='text/html')
-    return render_template("metric.html", metrics=constants.fairness_metrics, description=constants.fairness_metrics_descr)
+    if request.method == "POST":
+        app.config['atts_n_values_picked'] = request.get_json()
 
+    return render_template("metric.html", metrics=constants.fairness_metrics,
+                           description=constants.fairness_metrics_descr)
 @app.route('/fairness_report', methods=['GET', 'POST'])
 def fairness_report():
     if app.config["DATASET"] == "upload":
-        the_metrics, the_b_metrics, datasets, label_data, score_data, app.config[
-            "b_details"] = prcs.get_fairness_metrics(app.config["atts_n_vals"], path_to_csv=app.config["UPLOADED_FILE"])
-        app.config["Label_data"] = label_data
-        app.config["Score_data"] = score_data
-        data, flag = prcs.get_data(the_metrics, the_b_metrics, metrics_picked, atts_picked, values_picked,
-                                   app.config['Threshold'], app.config["DATASET"])
+
+        metrics = request.form.getlist('metrics')
+        threshold = request.form['threshold']
+        app.config['Threshold'] = threshold
+        app.config['Metrics'] = metrics
+
+        data = prcs.get_fairness_metrics(app.config["atts_n_values_picked"], path_to_csv=app.config["UPLOADED_FILE"],
+                                         metrics_to_calculate=app.config['Metrics'], threshold=app.config['Threshold'])
     else:
         the_b_metrics, truth, the_metrics, datasets, app.config["privileged_groups"], app.config["unprivileged_groups"], \
-        app.config["the_b_datasets"], app.config["train_datasets"], app.config["test_datasets"], app.config[
+            app.config["the_b_datasets"], app.config["train_datasets"], app.config["test_datasets"], app.config[
             "b_details"] = expls.example(app.config["DATASET"], app.config["atts"])
         app.config["Datasets"] = datasets
         data, flag = prcs.get_data(the_metrics, the_b_metrics, metrics_picked, atts_picked, values_picked, 0,
                                    app.config["DATASET"])
 
     app.config["DATA"] = data
-    if app.config["DATASET"] == "upload":
-        ideal = fairness_metrics_ideal
-    else:
-        ideal = fairness_example_metrics_ideal
 
-    return render_template("fairness_report.html", fairness_metrics=metrics_picked, data=data, data2=json.dumps(data),
-                           ideal=ideal, threshold=app.config['Threshold'], flag=flag, details=app.config["b_details"])
+    return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'])
 
 
 @app.route('/algorithms', methods=['GET', 'POST'])
@@ -116,6 +108,7 @@ def algorithms():
     else:
         return render_template("algorithms.html", algorithms=mitigation_example_algorithms,
                                description=mitigation_example_algorithms_descr)
+
 
 @app.route('/mitigation_report', methods=['GET', 'POST'])
 def mitigation_report():
@@ -134,17 +127,6 @@ def mitigation_report():
     return render_template("mitigation_report.html", data=unbiased_data, threshold=app.config['Threshold'],
                            ideal=fairness_metrics_ideal, biased_details=app.config["b_details"],
                            unbiased_details=app.config["ub_details"])
-
-
-@app.route('/graphs', methods=['GET', 'POST'])
-def graphs():
-    if request.method == "POST":
-        metrics = request.get_json()
-        app.config['Threshold'] = metrics['threshold']
-        for val in metrics['name']:
-            metrics_picked.append(val)
-
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route('/mit_graphs', methods=['GET', 'POST'])

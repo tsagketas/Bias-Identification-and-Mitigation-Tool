@@ -1,128 +1,110 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        .jumbotron {
-            text-align: center;
-            background-color: #f8f9fa;
-            padding: 2rem 1rem;
-            border: 1px solid #e3e3e3;
-            border-radius: 0.3rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-
-        .form-container {
-            max-width: 75%;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: #ffffff;
-            border: 1px solid #e3e3e3;
-            border-radius: 0.3rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-
-        .form-group label {
-            font-weight: 600;
-        }
-
-        .custom-checkbox {
-            margin-right: 1rem;
-        }
-
-        .form-control {
-            width: 100%;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #004085;
-        }
-
-        .btn-secondary, .btn-danger {
-            font-size: 0.875rem;
-            border-radius: 0.3rem;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: #fff;
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: #fff;
-        }
-
-        .btn-danger:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
-        }
-
-        .image {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .table-container {
-            margin-top: 2rem;
-        }
-
-        #guide {
-            width: 650px;
-            overflow: hidden; /* Prevents content from overflowing the container */
-        }
-
-        /* Ensure the section does not exceed the container's size */
-        #visualisation {
-            max-width: 100%; /* Makes sure the width does not exceed the container's width */
-            max-height: 100%; /* Makes sure the height does not exceed the container's height */
-            overflow: auto; /* Adds scrollbars if the content is too large */
-            width: 100%;
-            transform: scale(1.6); /* Zoom in a little bit */
-            margin: 0 auto;
-            position: relative;
-        }
-
-        #visualisation > * {
-            max-width: 100%;
-            overflow: hidden; /* Prevent child elements from overflowing */
-        }
-
-
-    </style>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+  .jumbotron {
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 2rem 1rem;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  .form-container {
+    max-width: 75%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  .form-group label {
+    font-weight: 600;
+  }
+  .custom-checkbox {
+    margin-right: 1rem;
+  }
+  .form-control {
+    width: 100%;
+  }
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+  }
+  .btn-secondary, .btn-danger {
+    font-size: 0.875rem;
+    border-radius: 0.3rem;
+  }
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+  }
+  .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+  }
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff.
+  }
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+  .image {
+    max-width: 100%;
+    height: auto;
+  }
+  .table-container {
+    margin-top: 2rem;
+  }
+  #guide {
+    width: 600px;
+    overflow: hidden; /* Prevents content from overflowing the container */
+  }
+  /* Ensure the section does not exceed the container's size */
+  #visualisation {
+    max-width: 100%; /* Makes sure the width does not exceed the container's width */
+    max-height: 100%; /* Makes sure the height does not exceed the container's height */
+    overflow: auto; /* Adds scrollbars if the content is too large */
+    width: 100%;
+    transform: scale(1.6); /* Zoom in a little bit */
+    margin: 0 auto;
+    position: relative.
+  }
+  #visualisation > * {
+    max-width: 100%;
+    overflow: hidden; /* Prevent child elements from overflowing */
+  }
+</style>
 {% endblock %}
 
-
 {% block body %}
-    <div class="jumbotron">
-        <h1 class="display-4">Select Fairness Metric</h1>
-        <p class="lead">This is the most important stage of the process, you need to choose the right metric(s)
-            depending on your problem.</p>
-        <hr class="my-4">
-        <img class="image" src="{{ url_for('static', filename='chain_3.png') }}">
-        <p>If you feel a little lost, click <a id="dropGuide" style="color:blue;">here</a> and follow our guide to help
-            you with selection.</p>
-        <div class="container" id="guide" hidden style="width: 650px;">
-            <section id="visualisation">
-            </section>
-        </div>
+<div class="jumbotron">
+    <h1 class="display-4">Select Fairness Metric</h1>
+    <p class="lead">This is the most important stage of the process, you need to choose the right metric(s)
+        depending on your problem.</p>
+    <hr class="my-4">
+    <img class="image" src="{{ url_for('static', filename='chain_3.png') }}">
+    <p>If you feel a little lost, click <a id="dropGuide" style="color:blue;">here</a> and follow our guide to help
+        you with selection.</p>
+    <div class="container" id="guide" hidden style="width: 650px;">
+        <section id="visualisation">
+        </section>
     </div>
+</div>
 
-    <div class="form-container">
+<div class="form-container">
+    <form action="{{ url_for('fairness_report') }}" method="post">
         <table class="table table-bordered table-striped" id="table">
             <thead>
             <tr>
@@ -134,7 +116,7 @@
             {% for attribute in metrics %}
                 <tr id="{{ attribute }}">
                     <td>
-                        <input name="checkbox" type="checkbox" value="{{ attribute }}">
+                        <input name="metrics" type="checkbox" value="{{ attribute }}">
                         {{ attribute.replace('_', ' ').title() }}
                     </td>
                     <td>{{ description[loop.index0] }}</td>
@@ -147,177 +129,149 @@
                 <div class="input-group-prepend">
                     <span class="input-group-text">Enter your Fairness Threshold (%)</span>
                 </div>
-                <input class="col-1 form-control" id="threshold" type="text">
+                <input class="col-1 form-control" id="threshold" name="threshold" type="text">
                 <span class="input-group-text">If a specific bias metric for a group is within this percentage of the reference group, this audit will pass</span>
             </div>
         {% else %}
-            <input hidden class="col-1 form-control" id="threshold" type="text" value="0">
+            <input hidden class="col-1 form-control" id="threshold" name="threshold" type="text" value="0">
         {% endif %}
-    </div>
-    <form hidden id="form" action="/fairness_report" method="POST">
-        <button class="btn btn-primary" type="submit">Next Step</button>
+        <div class="text-center mt-4">
+            <button class="btn btn-primary" id="button" type="submit">Next Step</button>
+        </div>
     </form>
-    <div class="text-center mt-4">
-        <button class="btn btn-primary" id="button" type="button">Next Step</button>
-    </div>
-    <script>
-        var data = {
-            "id": 1,
-            "type": "Root",
-            "description": "Choose type of representation of the data",
-            "children": [
-                {
-                    "id": 2,
-                    "name": "Disparate representation",
-                    "type": "Type",
-                    "description": "What do you need to select?",
-                    "children": [
-                        {
-                            "id": "asnwer1",
-                            "name": "Equal number of people from each group",
-                            "type": "Organism",
-                            "description": "Click me! And Check below the metric(s) that suit you",
-                            "children": []
-                        },
-                        {
-                            "id": "asnwer2",
-                            "name": "Proportional percentage in the overall population",
-                            "type": "Organism",
-                            "description": "Click me! And Check below the metric(s) that suit you",
-                            "children": []
-                        }
-                    ]
-                },
-                {
-                    "id": 6,
-                    "name": "Disparate errors",
-                    "type": "Type",
-                    "description": "What are your interventions?",
-                    "children": [
-                        {
-                            "id": 7,
-                            "name": "Punitive",
-                            "type": "Organism",
-                            "description": "Are you intervening with a very small % of the population?",
-                            "children": [
-                                {
-                                    "id": "#asnwer3",
-                                    "name": "Yes",
-                                    "type": "Organism",
-                                    "description": "Click me! And Check below the metric(s) that suit you",
-                                    "children": []
-                                },
-                                {
-                                    "id": "#asnwer4",
-                                    "name": "No",
-                                    "type": "Organism",
-                                    "description": "Click me! And Check below the metric(s) that suit you",
-                                    "children": []
-                                }
-                            ]
-                        },
-                        {
-                            "id": 10,
-                            "name": "Assistive",
-                            "type": "Organism",
-                            "description": "Are you intervening with a very small % of the population?",
-                            "children": [
-                                {
-                                    "id": "#asnwer5",
-                                    "name": "Yes",
-                                    "type": "Organism",
-                                    "description": "Click me! And Check below the metric(s) that suit you",
-                                    "children": []
-                                },
-                                {
-                                    "id": "#asnwer6",
-                                    "name": "No",
-                                    "type": "Organism",
-                                    "description": "Click me! And Check below the metric(s) that suit you",
-                                    "children": []
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        };
+</div>
 
-        var treePlugin = new d3.mitchTree.boxedTree()
-            .setData(data)
-            .setElement(document.getElementById("visualisation"))
-            .setIdAccessor(function (data) {
-                return data.id;
-            })
-            .setChildrenAccessor(function (data) {
-                return data.children;
-            })
-            .setBodyDisplayTextAccessor(function (data) {
-                return data.description;
-            })
-            .setTitleDisplayTextAccessor(function (data) {
-                return data.name;
-            })
-            .on("nodeClick", function (event) {
-                if (event.data.id == "asnwer1") {
-                    var picked = document.querySelectorAll('#disparate_impact,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-                } else if (event.data.id == "asnwer2") {
-                    var picked = document.querySelectorAll('#mean_difference,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-                } else if (event.data.id == "asnwer3") {
-                    var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-                } else if (event.data.id == "asnwer4") {
-                    var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-
-                } else if (event.data.id == "asnwer5") {
-                    var picked = document.querySelectorAll('#mean_difference,#disparate_impact_difference,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-                } else if (event.data.id == "asnwer6") {
-                    var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
-                    picked.forEach(element => element.style.display = 'none');
-                }
-            })
-            .initialize();
-    </script>
-
-    <script>
-        $(document).ready(function () {
-            $("#dropGuide").click(function () {
-                if ($("#guide").prop("hidden") == true) {
-                    $("#guide").prop("hidden", false);
-                } else {
-                    $("#guide").prop("hidden", true);
-                }
-            });
-            $('#button').click(function () {
-                var metrics = [];
-                var checkboxes = document.getElementsByName("checkbox");
-                var threshold = document.getElementById("threshold").value;
-                if (threshold)
-                    var checkboxesChecked = [];
-                for (var i = 0; i < checkboxes.length; i++) {
-                    if (checkboxes[i].checked) {
-                        metrics.push(checkboxes[i].value);
+<script>
+    var data = {
+        "id": 1,
+        "type": "Root",
+        "description": "Choose type of representation of the data",
+        "children": [
+            {
+                "id": 2,
+                "name": "Disparate representation",
+                "type": "Type",
+                "description": "What do you need to select?",
+                "children": [
+                    {
+                        "id": "asnwer1",
+                        "name": "Equal number of people from each group",
+                        "type": "Organism",
+                        "description": "Click me! And Check below the metric(s) that suit you",
+                        "children": []
+                    },
+                    {
+                        "id": "asnwer2",
+                        "name": "Proportional percentage in the overall population",
+                        "type": "Organism",
+                        "description": "Click me! And Check below the metric(s) that suit you",
+                        "children": []
                     }
-                }
-                metrics = {"name": metrics, "threshold": threshold};
-                var formdata = JSON.stringify(metrics);
-                $.ajax({
-                    url: '/graphs',
-                    type: 'POST',
-                    contentType: 'application/json; charset=UTF-8',
-                    dataType: "json",
-                    data: formdata,
-                    success: function () {
-                        $("#form").prop("hidden", false);
-                        $("#button").prop("hidden", true);
+                ]
+            },
+            {
+                "id": 6,
+                "name": "Disparate errors",
+                "type": "Type",
+                "description": "What are your interventions?",
+                "children": [
+                    {
+                        "id": 7,
+                        "name": "Punitive",
+                        "type": "Organism",
+                        "description": "Are you intervening with a very small % of the population?",
+                        "children": [
+                            {
+                                "id": "#asnwer3",
+                                "name": "Yes",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            },
+                            {
+                                "id": "#asnwer4",
+                                "name": "No",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 10,
+                        "name": "Assistive",
+                        "type": "Organism",
+                        "description": "Are you intervening with a very small % of the population?",
+                        "children": [
+                            {
+                                "id": "#asnwer5",
+                                "name": "Yes",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            },
+                            {
+                                "id": "#asnwer6",
+                                "name": "No",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            }
+                        ]
                     }
-                })
-            });
+                ]
+            }
+        ]
+    };
+
+    var treePlugin = new d3.mitchTree.boxedTree()
+        .setData(data)
+        .setElement(document.getElementById("visualisation"))
+        .setIdAccessor(function (data) {
+            return data.id;
+        })
+        .setChildrenAccessor(function (data) {
+            return data.children;
+        })
+        .setBodyDisplayTextAccessor(function (data) {
+            return data.description;
+        })
+        .setTitleDisplayTextAccessor(function (data) {
+            return data.name;
+        })
+        .on("nodeClick", function (event) {
+            if (event.data.id == "asnwer1") {
+                var picked = document.querySelectorAll('#disparate_impact,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer2") {
+                var picked = document.querySelectorAll('#mean_difference,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer3") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer4") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer5") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact_difference,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer6") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            }
+        })
+        .initialize();
+</script>
+
+<script>
+    $(document).ready(function () {
+        $("#dropGuide").click(function () {
+            if ($("#guide").prop("hidden") == true) {
+                $("#guide").prop("hidden", false);
+            } else {
+                $("#guide").prop("hidden", true);
+            }
         });
-    </script>
-
+    });
+</script>
 {% endblock %}

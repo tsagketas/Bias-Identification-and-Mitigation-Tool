@@ -138,6 +138,26 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
   $(document).ready(function () {
+    function updateIntersectionOptions(attribute) {
+      var selectedAttributes = [];
+      $('input[name="attribute"]:checked').each(function () {
+        selectedAttributes.push($(this).val());
+      });
+      var options = '<option value="">Select Attribute</option>';
+      {% for attr in data %}
+      if (selectedAttributes.indexOf('{{ attr.name }}') === -1 && '{{ attr.name }}' !== 'Score' && '{{ attr.name }}' !== 'Label_value') {
+        options += '<option value="{{ attr.name }}">{{ attr.name }}</option>';
+      }
+      {% endfor %}
+      $('select[name^="intersection_attribute_"]').each(function () {
+        var currentAttribute = $(this).val();
+        $(this).html(options);
+        if (currentAttribute && selectedAttributes.indexOf(currentAttribute) === -1) {
+          $(this).val(currentAttribute);
+        }
+      });
+    }
+
     $('#attributeForm').on('click', '.add-intersection', function () {
         var attribute = $(this).data('attribute');
         var $row = $(this).closest('.attribute-row');
@@ -149,7 +169,7 @@
               <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
                 <option value="">Select Attribute</option>
                 {% for attr in data %}
-                {% if attr.name != '${existingAttrName}' %}
+                {% if attr.name != '${existingAttrName}' and attr.name != 'Score' and attr.name != 'Label_value' %}
                 <option value="{{ attr.name }}">{{ attr.name }}</option>
                 {% endif %}
                 {% endfor %}
@@ -179,7 +199,7 @@
 
             if (selectedAttr) {
                 {% for attr in data %}
-                if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}') {
+                if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}' && selectedAttr !== 'Score' && selectedAttr !== 'Label_value') {
                     {% for val in attr.values %}
                     privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
                     if ("{{ val }}" !== '${existingPrivilegedValue}') {
@@ -196,6 +216,7 @@
                 unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
             });
         });
+        updateIntersectionOptions(attribute);
     });
 
     $('#attributeForm').on('click', '.remove-intersection', function () {
@@ -203,6 +224,7 @@
         $row.prev('.attribute-row').find('.add-intersection').show();
         $row.next('.separator').remove();
         $row.remove();
+        updateIntersectionOptions();
     });
 
     $('#button').click(function () {
@@ -264,6 +286,10 @@
         $(`select[name="unprivileged_${attribute}"] option`).show();
         $(`select[name="unprivileged_${attribute}"] option[value="${selectedPrivileged}"]`).hide();
     });
-});
+
+    $('input[name="attribute"]').change(function () {
+        updateIntersectionOptions();
+    });
+  });
 </script>
 {% endblock %}

@@ -22,6 +22,9 @@ if predict_column in data.columns:
 else:
     raise ValueError("The dataset does not contain the 'outcome' column.")
 
+# Encoding the 'outcome' column to 0 and 1
+y = y.map({'<=50K': 0, '>50K': 1})
+
 # Handling missing values
 for column in X.columns:
     if X[column].dtype == 'object':
