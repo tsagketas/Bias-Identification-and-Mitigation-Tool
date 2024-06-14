@@ -1,0 +1,26 @@
+Intro page : user clicks continue
+
+Selection Page:
+        - User selects if he wants to check a demo based on the 3 datasets ( german , compas , bank)
+        - User uploads a dataset and selects with what model with the train be with :
+            from sklearn.datasets import load_iris
+            from sklearn.model_selection import train_test_split
+            from sklearn.naive_bayes import GaussianNB
+            from sklearn.metrics import accuracy_score
+
+Attribute Page:
+        - user selects sensitive attributes and privileged or unprivileged groups
+
+Metric Page
+        - user selects metrics and sets a threshold
+
+Fairness Results Page:
+        - sees the results of the unfair metrics
+
+Algorith Page:
+        - user selects mitigation algorithm (trains with the same model as he chose in the beggining)
+
+Algorith Result Page:
+        - sees the results of the unfair metrics ( and maybe downloads a new mitigated dataset )
+
+

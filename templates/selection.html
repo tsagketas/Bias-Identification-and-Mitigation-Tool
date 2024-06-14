@@ -1,13 +1,39 @@
 {% extends "base.html" %}
 
 {% block head %}
-<!-- Additional page-specific head content can go here -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 {% endblock %}
 
 <style>
   #upload {
     padding: 0.3rem 0.6rem;
     font-size: 0.9rem;
+  }
+  .form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .inline-sections {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-check {
+    margin-bottom: 0.5rem;
+  }
+  .next-step-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
   }
 </style>
 
@@ -20,55 +46,88 @@
 </div>
 
 <div class="form-container">
+  <h5>Demo Datasets</h5>
+  <table class="table table-bordered table-striped">
+    <tbody>
+      <tr>
+        <td>
+          <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism Risk Assessment</a>
+        </td>
+        <td>Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole officers for scoring criminal defendant’s likelihood of reoffending (recidivism).</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data Set</a>
+        </td>
+        <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income" dataset.</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data Set</a>
+        </td>
+        <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
   <ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation" id="demo_datasets">
-      <a class="nav-link active" id="demo" data-toggle="tab" href="#home" role="tab"
-        aria-controls="home" aria-selected="true" style="color: #0d0d1b;">Demo Datasets</a>
+    <li class="nav-item" role="presentation" id="upload_data">
+      <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload_div" role="tab"
+        aria-controls="upload_div" aria-selected="true" style="color: #0d0d1b;">Upload your own Data</a>
+    </li>
+    <li class="nav-item" role="presentation" id="model_data">
+      <a class="nav-link" id="model-tab" data-toggle="tab" href="#model_div" role="tab"
+        aria-controls="model_div" aria-selected="false" style="color: #0d0d1b;">Select Training Your Model</a>
     </li>
   </ul>
-  <div>
-    <table class="table table-bordered table-striped">
-      <tbody>
-        <tr>
-          <td>
-            <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism Risk Assessment</a>
-          </td>
-          <td> Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole
-            officers for scoring criminal defendant’s likelihood of reoffending (recidivism).</td>
-        </tr>
-        <tr>
-          <td>
-            <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data Set</a>
-          </td>
-          <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income" dataset.</td>
-        </tr>
-        <tr>
-          <td>
-            <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data Set</a>
-          </td>
-          <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
-        </tr>
-      </tbody>
-    </table>
-    <br>
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-      <li class="nav-item" role="presentation" id="upload_data">
-        <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab"
-          aria-controls="upload" aria-selected="true" style="color: #0d0d1b;">Upload your own Data</a>
-      </li>
-    </ul>
-    <br>
-    <div class="tab-content" id="myTabContent">
-      <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
-        <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-          <div class="form-group mb-2">
-            <input type="file" class="form-control-file btn-sm" name="file" id="file">
-          </div>
-          <button id="upload" class="btn btn-primary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.9rem;" type="submit">Upload</button>
-        </form>
-        <a href="" class="links2" onclick="exampleData()" style="display: block; margin-top: 0.5rem;">Click to see the dataset structure example</a>
-      </div>
+  <div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="upload_div" role="tabpanel" aria-labelledby="upload-tab">
+      <form action="/Choose_att" class="form-inline" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+        <div class="form-group mb-2">
+          <input type="file" class="form-control-file btn-sm" name="file" id="file" onchange="enableNextStep()">
+        </div>
+        <button id="upload" class="btn btn-primary btn-sm ml-2" style="padding: 0.3rem 0.6rem; font-size: 0.9rem;" type="submit">Upload</button>
+      </form>
+      <a href="" class="links2" onclick="exampleData()" style="display: block; margin-top: 0.5rem;">Click to see the dataset structure example</a>
     </div>
+    <div class="tab-pane fade" id="model_div" role="tabpanel" aria-labelledby="model-tab">
+      <h5>Choose Your Model</h5>
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <td>
+              <input class="form-check-input" type="radio" name="model" id="logistic_regression" value="logistic_regression" checked>
+              <label class="form-check-label" for="logistic_regression">Logistic Regression</label>
+            </td>
+            <td>Logistic regression is a statistical method for predicting binary outcomes from data.</td>
+          </tr>
+          <tr>
+            <td>
+              <input class="form-check-input" type="radio" name="model" id="naive_bayes" value="naive_bayes">
+              <label class="form-check-label" for="naive_bayes">Naive Bayes</label>
+            </td>
+            <td>Naive Bayes is a simple technique for constructing classifiers: models that assign class labels to problem instances.</td>
+          </tr>
+          <tr>
+            <td>
+              <input class="form-check-input" type="radio" name="model" id="random_forest" value="random_forest">
+              <label class="form-check-label" for="random_forest">Random Forest</label>
+            </td>
+            <td>Random Forest is an ensemble learning method for classification that operates by constructing a multitude of decision trees.</td>
+          </tr>
+          <tr>
+            <td>
+              <input class="form-check-input" type="radio" name="model" id="svm" value="svm">
+              <label class="form-check-label" for="svm">SVM</label>
+            </td>
+            <td>Support Vector Machine (SVM) is a supervised machine learning algorithm which can be used for classification or regression challenges.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="next-step-container">
+    <button id="next-step" class="btn btn-primary btn-sm mt-2" type="button" disabled>Next Step</button>
   </div>
 </div>
 
@@ -84,7 +143,18 @@
       alert("Please choose a file to upload.");
       return false;
     }
+    document.getElementById('next-step').disabled = false;
     return true;
+  }
+
+  function enableNextStep() {
+    var fileInput = document.getElementById('file');
+    var nextStepButton = document.getElementById('next-step');
+    if (fileInput.value !== "") {
+      nextStepButton.disabled = false;
+    } else {
+      nextStepButton.disabled = true;
+    }
   }
 </script>
 {% endblock %}

@@ -26,22 +26,28 @@ def index():
 def selection():
     return render_template("selection.html")
 
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if request.method == 'POST' and 'file' in request.files:
+        file_to_upload = request.files['file']
+        if file_to_upload.filename != '':
+            file_path = os.path.join(app.config["FILES_UPLOADS"], file_to_upload.filename)
+            file_to_upload.save(file_path)
+            app.config["UPLOADED_FILE"] = file_path
+            app.config["DATASET"] = "upload"
+            return jsonify({"success": True, "message": "File uploaded successfully!"})
+    return jsonify({"success": False, "message": "No file uploaded."})
+
 
 @app.route('/Choose_att', defaults={'dataset': None}, methods=['GET', 'POST'])
 @app.route('/Choose_att/<dataset>', methods=['GET', 'POST'])
 def Choose_att(dataset):
     if not dataset:
         if request.method == 'POST' and request.files['file']:
-            file_to_upload = request.files['file']
 
-            file_to_upload.save(os.path.join(
-                app.config["FILES_UPLOADS"], file_to_upload.filename))
-            app.config["UPLOADED_FILE"] = app.config["FILES_UPLOADS"] + \
-                                          "/" + file_to_upload.filename
-            app.config["DATASET"] = "upload"
-            data = att_values.dataset_parse(app.config["UPLOADED_FILE"])
+            app.config['SELECTED_MODEL'] = selected_model
 
-        return render_template("chooseAtt.html", data=data)
+        return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
     else:
         data = []
         app.config["DATASET"] = dataset
