@@ -2,160 +2,276 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-{% endblock %}
-
 <style>
-  #upload {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.9rem;
+  .jumbotron {
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 2rem 1rem;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   }
   .form-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    max-width: 75%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
   }
-  .inline-sections {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+  .form-group label {
+    font-weight: 600;
+  }
+  .custom-checkbox {
+    margin-right: 1rem;
+  }
+  .form-control {
     width: 100%;
   }
-  .form-group {
-    margin-bottom: 1rem;
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
   }
-  .form-check {
-    margin-bottom: 0.5rem;
+  .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
   }
-  .next-step-container {
+  .btn-secondary, .btn-danger {
+    font-size: 0.875rem;
+    border-radius: 0.3rem;
+  }
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+  }
+  .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+  }
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff.
+  }
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+  .image {
+    max-width: 100%;
+    height: auto;
+  }
+  .table-container {
     margin-top: 2rem;
-    display: flex;
-    justify-content: flex-end;
+  }
+  #guide {
+    width: 600px;
+    overflow: hidden; /* Prevents content from overflowing the container */
+  }
+  /* Ensure the section does not exceed the container's size */
+  #visualisation {
+    max-width: 100%; /* Makes sure the width does not exceed the container's width */
+    max-height: 100%; /* Makes sure the height does not exceed the container's height */
+    overflow: auto; /* Adds scrollbars if the content is too large */
     width: 100%;
+    transform: scale(1.6); /* Zoom in a little bit */
+    margin: 0 auto;
+    position: relative.
+  }
+  #visualisation > * {
+    max-width: 100%;
+    overflow: hidden; /* Prevent child elements from overflowing */
   }
 </style>
+{% endblock %}
 
 {% block body %}
 <div class="jumbotron">
-  <h1 class="display-4">Data Auditing</h1>
-  <p class="lead">In this stage of the process you need to upload your dataset. You can always try our demo datasets to get a hang of the tool.</p>
-  <hr class="my-4">
-  <img class="image" src="{{url_for('static', filename='chain_1.png')}}">
+    <h1 class="display-4">Select Fairness Metric</h1>
+    <p class="lead">This is the most important stage of the process, you need to choose the right metric(s)
+        depending on your problem.</p>
+    <hr class="my-4">
+    <img class="image" src="{{ url_for('static', filename='chain_3.png') }}">
+    <p>If you feel a little lost, click <a id="dropGuide" style="color:blue;">here</a> and follow our guide to help
+        you with selection.</p>
+    <div class="container" id="guide" hidden style="width: 650px;">
+        <section id="visualisation">
+        </section>
+    </div>
 </div>
 
 <div class="form-container">
-  <h5>Demo Datasets</h5>
-  <table class="table table-bordered table-striped">
-    <tbody>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism Risk Assessment</a>
-        </td>
-        <td>Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole officers for scoring criminal defendant’s likelihood of reoffending (recidivism).</td>
-      </tr>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data Set</a>
-        </td>
-        <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income" dataset.</td>
-      </tr>
-      <tr>
-        <td>
-          <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data Set</a>
-        </td>
-        <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
-      </tr>
-    </tbody>
-  </table>
-  <br>
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation" id="upload_data">
-      <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload_div" role="tab"
-        aria-controls="upload_div" aria-selected="true" style="color: #0d0d1b;">Upload your own Data</a>
-    </li>
-    <li class="nav-item" role="presentation" id="model_data">
-      <a class="nav-link" id="model-tab" data-toggle="tab" href="#model_div" role="tab"
-        aria-controls="model_div" aria-selected="false" style="color: #0d0d1b;">Select Training Your Model</a>
-    </li>
-  </ul>
-  <div class="tab-content" id="myTabContent">
-    <h5></h5>
-    <div class="tab-pane fade show active" id="upload_div" role="tabpanel" aria-labelledby="upload-tab">
-      <form action="/upload" class="form-inline" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-        <div class="form-group mb-2">
-          <input type="file" class="form-control-file btn-sm" name="file" id="file" onchange="enableNextStep()">
+    <form action="{{ url_for('fairness_report') }}" method="post">
+        <table class="table table-bordered table-striped" id="table">
+            <thead>
+            <tr>
+                <th style="width: 220px;">Fairness Audition Metric</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for attribute in metrics %}
+                <tr id="{{ attribute }}">
+                    <td>
+                        <input name="metrics" type="checkbox" value="{{ attribute }}">
+                        {{ attribute.replace('_', ' ').title() }}
+                    </td>
+                    <td>{{ description[loop.index0] }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if not dataset %}
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Enter your Fairness Threshold (%)</span>
+                </div>
+                <input class="col-1 form-control" id="threshold" name="threshold" type="text">
+                <span class="input-group-text">If a specific bias metric for a group is within this percentage of the reference group, this audit will pass</span>
+            </div>
+        {% else %}
+            <input hidden class="col-1 form-control" id="threshold" name="threshold" type="text" value="0">
+        {% endif %}
+        <div class="text-center mt-4">
+            <button class="btn btn-primary" id="button" type="submit">Next Step</button>
         </div>
-        <button id="upload" class="btn btn-primary btn-sm ml-2" style="padding: 0.3rem 0.6rem; font-size: 0.9rem;" type="submit">Upload</button>
-      </form>
-      <a href="" class="links2" onclick="exampleData()" style="display: block; margin-top: 0.5rem;">Click to see the dataset structure example</a>
-    </div>
-    <div class="tab-pane fade" id="model_div" role="tabpanel" aria-labelledby="model-tab">
-      <h5></h5>
-      <table class="table table-bordered table-striped">
-        <tbody>
-          <tr>
-            <td>
-              <input class="form-check-input" type="radio" name="model" id="logistic_regression" value="logistic_regression" checked>
-              <label class="form-check-label" for="logistic_regression">Logistic Regression</label>
-            </td>
-            <td>Logistic regression is a statistical method for predicting binary outcomes from data.</td>
-          </tr>
-          <tr>
-            <td>
-              <input class="form-check-input" type="radio" name="model" id="naive_bayes" value="naive_bayes">
-              <label class="form-check-label" for="naive_bayes">Naive Bayes</label>
-            </td>
-            <td>Naive Bayes is a simple technique for constructing classifiers: models that assign class labels to problem instances.</td>
-          </tr>
-          <tr>
-            <td>
-              <input class="form-check-input" type="radio" name="model" id="random_forest" value="random_forest">
-              <label class="form-check-label" for="random_forest">Random Forest</label>
-            </td>
-            <td>Random Forest is an ensemble learning method for classification that operates by constructing a multitude of decision trees.</td>
-          </tr>
-          <tr>
-            <td>
-              <input class="form-check-input" type="radio" name="model" id="svm" value="svm">
-              <label class="form-check-label" for="svm">SVM</label>
-            </td>
-            <td>Support Vector Machine (SVM) is a supervised machine learning algorithm which can be used for classification or regression challenges.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div class="next-step-container">
-    <button id="next-step" class="btn btn-primary btn-sm mt-2" type="button" disabled>Next Step</button>
-  </div>
+    </form>
 </div>
 
 <script>
-  function exampleData() {
-    var myWindow = window.open("", "MsgWindow", "width=800, height=500");
-    myWindow.document.write("Score column = Model's prediction <br> Label column = Real outcome <img src='{{url_for('static', filename='example.png')}}'>");
-  }
+    var data = {
+        "id": 1,
+        "type": "Root",
+        "description": "Choose type of representation of the data",
+        "children": [
+            {
+                "id": 2,
+                "name": "Disparate representation",
+                "type": "Type",
+                "description": "What do you need to select?",
+                "children": [
+                    {
+                        "id": "asnwer1",
+                        "name": "Equal number of people from each group",
+                        "type": "Organism",
+                        "description": "Click me! And Check below the metric(s) that suit you",
+                        "children": []
+                    },
+                    {
+                        "id": "asnwer2",
+                        "name": "Proportional percentage in the overall population",
+                        "type": "Organism",
+                        "description": "Click me! And Check below the metric(s) that suit you",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 6,
+                "name": "Disparate errors",
+                "type": "Type",
+                "description": "What are your interventions?",
+                "children": [
+                    {
+                        "id": 7,
+                        "name": "Punitive",
+                        "type": "Organism",
+                        "description": "Are you intervening with a very small % of the population?",
+                        "children": [
+                            {
+                                "id": "#asnwer3",
+                                "name": "Yes",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            },
+                            {
+                                "id": "#asnwer4",
+                                "name": "No",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 10,
+                        "name": "Assistive",
+                        "type": "Organism",
+                        "description": "Are you intervening with a very small % of the population?",
+                        "children": [
+                            {
+                                "id": "#asnwer5",
+                                "name": "Yes",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            },
+                            {
+                                "id": "#asnwer6",
+                                "name": "No",
+                                "type": "Organism",
+                                "description": "Click me! And Check below the metric(s) that suit you",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
 
-  function validateForm() {
-    var fileInput = document.getElementById('file');
-    if (fileInput.value === "") {
-      alert("Please choose a file to upload.");
-      return false;
-    }
-    document.getElementById('next-step').disabled = false;
-    return true;
-  }
+    var treePlugin = new d3.mitchTree.boxedTree()
+        .setData(data)
+        .setElement(document.getElementById("visualisation"))
+        .setIdAccessor(function (data) {
+            return data.id;
+        })
+        .setChildrenAccessor(function (data) {
+            return data.children;
+        })
+        .setBodyDisplayTextAccessor(function (data) {
+            return data.description;
+        })
+        .setTitleDisplayTextAccessor(function (data) {
+            return data.name;
+        })
+        .on("nodeClick", function (event) {
+            if (event.data.id == "asnwer1") {
+                var picked = document.querySelectorAll('#disparate_impact,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer2") {
+                var picked = document.querySelectorAll('#mean_difference,#false_discovery_rate_difference,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer3") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_positive_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer4") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer5") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact_difference,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            } else if (event.data.id == "asnwer6") {
+                var picked = document.querySelectorAll('#mean_difference,#disparate_impact,#false_discovery_rate_difference,#false_omission_rate_difference,#false_negative_rate_difference');
+                picked.forEach(element => element.style.display = 'none');
+            }
+        })
+        .initialize();
+</script>
 
-  function enableNextStep() {
-    var fileInput = document.getElementById('file');
-    var nextStepButton = document.getElementById('next-step');
-    if (fileInput.value !== "") {
-      nextStepButton.disabled = false;
-    } else {
-      nextStepButton.disabled = true;
-    }
-  }
+<script>
+    $(document).ready(function () {
+        $("#dropGuide").click(function () {
+            if ($("#guide").prop("hidden") == true) {
+                $("#guide").prop("hidden", false);
+            } else {
+                $("#guide").prop("hidden", true);
+            }
+        });
+    });
 </script>
 {% endblock %}
