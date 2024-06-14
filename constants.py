@@ -48,16 +48,20 @@ mitigation_example_algorithms_descr = [
     "Calibrated Equality of Odds adjusts prediction labels to ensure fairness after making predictions."
 ]
 mitigation_algorithms = [
-    "Disparate Impact Remover", "Reweighing", "Adversarial Debiasing", "Meta Fair Classifier",
+    "Disparate Impact Remover",
+    "Reweighing",
+    "Adversarial Debiasing",
+    "Prejudice Remover Impact Remover",
     "Calibrated Equality of Odds"
 ]
 mitigation_algorithms_descr = [
-    "Disparate Impact Remover changes feature values to increase fairness while keeping the order of examples within groups.",
-    "Reweighing adjusts the weights of examples to ensure fairness before making predictions.",
-    "Adversarial Debiasing trains a model to be accurate and fair by reducing its ability to guess protected attributes.",
-    "Meta Fair Classifier trains a model to optimize a given fairness metric.",
-    "Calibrated Equality of Odds adjusts prediction labels to ensure fairness after making predictions."
+    "Disparate Impact Remover: Modifies the training data to remove disparate impact.",
+    "Reweighing: Adjusts the weights of different groups to balance the dataset.",
+    "Adversarial Debiasing: Uses an adversarial network to reduce bias in the learning algorithm.",
+    "Prejudice Remover Impact Remover: Modifies the learning algorithm to reduce prejudice.",
+    "Calibrated Equality of Odds: Adjusts the predictions to achieve equalized odds across groups."
 ]
+
 
 metrics_picked = []
 algorithms_picked = []

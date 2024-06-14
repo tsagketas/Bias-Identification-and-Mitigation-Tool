@@ -103,8 +103,8 @@ def fairness_report():
 @app.route('/algorithms', methods=['GET', 'POST'])
 def algorithms():
     if app.config["DATASET"] == "upload":
-        return render_template("algorithms.html", algorithms=mitigation_algorithms,
-                               description=mitigation_algorithms_descr)
+        return render_template("algorithms.html", algorithms=constants.mitigation_algorithms,
+                               description=constants.mitigation_algorithms_descr)
     else:
         return render_template("algorithms.html", algorithms=mitigation_example_algorithms,
                                description=mitigation_example_algorithms_descr)
@@ -112,7 +112,11 @@ def algorithms():
 
 @app.route('/mitigation_report', methods=['GET', 'POST'])
 def mitigation_report():
+
     if app.config["DATASET"] == "upload":
+
+        app.config['Algorithms'] = request.form.getlist('algorithms')
+
         unbiased_data, app.config["ub_details"] = prcs.mitigation_all(app.config["DATA"], app.config["Label_data"],
                                                                       app.config["Score_data"], algorithms_picked)
     else:
@@ -127,17 +131,6 @@ def mitigation_report():
     return render_template("mitigation_report.html", data=unbiased_data, threshold=app.config['Threshold'],
                            ideal=fairness_metrics_ideal, biased_details=app.config["b_details"],
                            unbiased_details=app.config["ub_details"])
-
-
-@app.route('/mit_graphs', methods=['GET', 'POST'])
-def mit_graphs():
-    if request.method == "POST":
-        algs = request.get_json()
-        for val in algs['name']:
-            algorithms_picked.append(val)
-
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
-
 
 if __name__ == "__main__":
     app.run(debug=True)

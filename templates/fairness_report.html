@@ -1,173 +1,302 @@
 {% extends "base.html" %}
 
 {% block head %}
-<!-- Ensure these scripts are included for Chart.js and plugin -->
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
-<style>
-  .jumbotron {
-    text-align: center;
-    background-color: #f8f9fa;
-    padding: 2rem 1rem;
-    border: 1px solid #e3e3e3;
-    border-radius: 0.3rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  }
-  .container {
-    margin-top: 2rem;
-  }
-  .steps {
-    margin-bottom: 2rem;
-  }
-  .rounded {
-    border-radius: 0.3rem;
-  }
-  .list-group-item {
-    font-size: 1rem;
-  }
-  .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-    color: #fff;
-  }
-  .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #004085;
-  }
-  .table-container {
-    margin-top: 2rem;
-  }
-  .table-title {
-    font-family: 'Arial', sans-serif;
-    font-weight: bold;
-    font-size: 1.5rem;
-    color: #007bff;
-  }
-  .table-subtitle {
-    font-family: 'Arial', sans-serif;
-    font-size: 1rem;
-    color: #6c757d;
-  }
-  .metric-table {
-    margin-bottom: 2rem;
-    border-radius: 0.5rem;
-    overflow: hidden;
-  }
-  .metric-table th, .metric-table td {
-    vertical-align: middle;
-    border: 1px solid #dee2e6;
-  }
-  .metric-table th {
-    background-color: #007bff;
-    color: #fff;
-  }
-  .metric-table td {
-    background-color: #f8f9fa;
-  }
-  .chart-container {
-    position: relative;
-    margin: auto;
-    height: 100%;
-    width: 100%;
-  }
-</style>
+    <!-- Ensure these scripts are included for Chart.js and plugin -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        .jumbotron {
+            text-align: center;
+            background-color: #f8f9fa;
+            padding: 2rem 1rem;
+            border: 1px solid #e3e3e3;
+            border-radius: 0.3rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .container {
+            margin-top: 2rem;
+        }
+
+        .steps {
+            display: flex;
+            margin-bottom: 2rem;
+            min-height: 300px; /* Optional: Ensure a minimum height for better centering */
+        }
+
+        .col-md-6 {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+        }
+
+        .rounded {
+            border-radius: 0.3rem;
+        }
+
+        .list-group-item {
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+        .table-container {
+            margin-top: 2rem;
+        }
+
+        .table-title {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .table-subtitle {
+            font-family: 'Arial', sans-serif;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .metric-table {
+            margin: auto;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .metric-table th, .metric-table td {
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
+            color: #343a40; /* Updated color for better visibility */
+        }
+
+        .metric-table th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .metric-table td {
+            background-color: #f8f9fa;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 100%;
+            width: 100%;
+        }
+        .chartjs-size-monitor {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="jumbotron">
-  <h1 class="display-4">Fairness Report</h1>
-  <p class="lead">The fairness report is presented below. Only attributes that are considered unfair based on the given threshold and metric are presented.</p>
-  <hr class="my-4">
-  <img class="image" src="{{url_for('static', filename='chain_4.png')}}">
-  <br>
-</div>
-<div class="container table-container">
-  {% for el in data %}
-  <div class="row steps">
-    <div class="col-md-4">
-      <div class="metric-table">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-               <th colspan="2">
-                <div class="table-title">{{ el['Metric'].replace('_', ' ').title() }}</div>
-                <div class="table-subtitle">The ideal value of this metric is {{ el['Ideal_Fairness_Value'] }}</div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Protected Attributes</td>
-              <td>{{ el['Protected_Attributes'] | join(', ') }}</td>
-            </tr>
-            <tr>
-              <td>Privileged Group</td>
-              <td>{{ el['Privileged_Group'] }}</td>
-            </tr>
-            <tr>
-              <td>Unprivileged Group</td>
-              <td>{{ el['Unprivileged_Group'] }}</td>
-            </tr>
-            <tr>
-              <td>Metric Value</td>
-              <td>{{ el['Values'] }}</td>
-            </tr>
-            {% if el['Intersectional_Attributes'] %}
-            <tr>
-              <td>Intersectional Attributes</td>
-              <td>
-                {% for intersection in el['Intersectional_Attributes'] %}
-                {{ intersection['attribute'] }} (Privileged: {{ intersection['privileged'] }}, Unprivileged: {{ intersection['unprivileged'] }})<br>
+    <div class="jumbotron">
+        <h1 class="display-4">Fairness Report</h1>
+        <p class="lead">The fairness report is presented below. Only attributes that are considered unfair based on the
+            given threshold and metric are presented.</p>
+        <hr class="my-4">
+        <img class="image" src="{{ url_for('static', filename='chain_4.png') }}">
+        <br>
+    </div>
+    <div class="container table-container">
+        {% for metric, metric_data in data.items() %}
+            <div class="row steps">
+                <div class="col-md-6">
+                    <div class="metric-table">
+                        <table class="table table-bordered">
+                            <thead>
+                            <tr>
+                                <th colspan="{{ metric_data|length + 1 }}">
+                                    <div class="table-title">{{ metric.replace('_', ' ').title() }}</div>
+                                    <div class="table-subtitle">The ideal value of this metric is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Protected Attributes</td>
+                                {% for el in metric_data %}
+                                    <td>{{ el['Protected_Attributes'] | join(', ') }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td>Privileged Group</td>
+                                {% for el in metric_data %}
+                                    <td>
+                                        {{ el['Privileged_Group'] }}
+                                        {% for attr in el['Intersectional_Attributes'] %}
+                                            {{ attr['privileged'] }}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td>Unprivileged Group</td>
+                                {% for el in metric_data %}
+                                    <td>
+                                        {{ el['Unprivileged_Group'] }}
+                                        {% for attr in el['Intersectional_Attributes'] %}
+                                            {{ attr['unprivileged'] }}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td>Metric Value</td>
+                                {% for el in metric_data %}
+                                    <td>{{ '%.4f' | format(el['Values']) }}</td>
+                                {% endfor %}
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <canvas id="chart-{{ loop.index }}" class="rounded float-right chartjs-size-monitor"></canvas>
+                    </div>
+                </div>
+            </div>
+            <br>
+        {% endfor %}
+    </div>
+    <div style="height: 100px; position: relative;">
+        <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);"
+           class="btn btn-primary btn-lg" href="{{ url_for('algorithms') }}" role="button">Next Step</a>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const threshold = {{ threshold | tojson }} / 100;
+
+        {% for metric, metric_data in data.items() %}
+            (function () {
+                var ctx = document.getElementById('chart-{{ loop.index }}').getContext('2d');
+                var idealValue = {{ metric_data[0]['Ideal_Fairness_Value'] | tojson }};
+                var lowerBound, upperBound;
+
+                if (idealValue === 0) {
+                    lowerBound = -2 * threshold;
+                    upperBound = 2 * threshold;
+                } else {
+                    lowerBound = idealValue * threshold;
+                    upperBound = idealValue / threshold;
+                }
+
+                var labels = [];
+                var values = [];
+
+                {% for el in metric_data %}
+                    var unprivilegedGroupLabel = '{{ el['Unprivileged_Group'] }}';
+                    {% for intersection in el['Intersectional_Attributes'] %}
+                        unprivilegedGroupLabel += ' {{ intersection['unprivileged'] }}';
+                    {% endfor %}
+                    unprivilegedGroupLabel = unprivilegedGroupLabel.trim();
+
+                    labels.push(unprivilegedGroupLabel);
+                    values.push({{ '%.4f' | format(el['Values']) }});
                 {% endfor %}
-              </td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="col-md-8">
-      <div class="chart-container">
-        <canvas id="chart-{{ loop.index }}" class="rounded float-right"></canvas>
-      </div>
-    </div>
-  </div>
-  <br>
-  {% endfor %}
-</div>
-<div style="height: 100px; position: relative;">
-  <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);" class="btn btn-primary btn-lg" href="{{ url_for('algorithms') }}" role="button">Next Step</a>
-</div>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    {% for el in data %}
-    (function() {
-      var ctx = document.getElementById('chart-{{ loop.index }}').getContext('2d');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: {{ el['Protected_Attributes'] | tojson | safe }},
-          datasets: [{
-            label: '{{ el['Metric'].replace('_', ' ').title() }}',
-            data: [{{ el['Values'] | tojson }}],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            yAxes: [{
-              ticks: {
-                beginAtZero: true
-              }
-            }]
-          }
-        }
-      });
-    })();
-    {% endfor %}
-  });
-</script>
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '{{ metric.replace('_', ' ').title() }}',
+                            data: values,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    suggestedMax: 2 /* Ensure visibility above 1 */
+                                },
+                                gridLines: {
+                                    color: "rgba(0, 0, 0, 0.1)"
+                                }
+                            }],
+                            xAxes: [{
+                                ticks: {
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    callback: function(value) {
+                                        return value.split(" "); // Adjusts label split to be closer
+                                    }
+                                },
+                                gridLines: {
+                                    display: false
+                                },
+                                barPercentage: 0.5, // Adjusts the bar width
+                                categoryPercentage: 0.5 // Adjusts the space between bars
+                            }]
+                        },
+                        tooltips: {
+                            callbacks: {
+                                label: function(tooltipItem, data) {
+                                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += tooltipItem.yLabel;
+                                    var group = data.labels[tooltipItem.index];
+                                    label += ' (Group: ' + group + ')';
+                                    return label;
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: [
+                                {
+                                    type: 'line',
+                                    mode: 'horizontal',
+                                    scaleID: 'y-axis-0',
+                                    value: idealValue,
+                                    borderColor: 'black', /* Threshold line color */
+                                    borderWidth: 1,
+                                },
+                                {
+                                    type: 'box',
+                                    yScaleID: 'y-axis-0',
+                                    yMin: lowerBound,
+                                    yMax: upperBound,
+                                    backgroundColor: 'rgba(144, 238, 144, 0.2)', // Light green
+                                    borderColor: 'rgba(144, 238, 144, 0.5)',
+                                    borderWidth: 1,
+                                    label: {
+                                        enabled: true,
+                                        content: 'Fairness Area',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.4)', /* Background color for label */
+                                        fontColor: 'white', /* Font color for label */
+                                        fontSize: 8 /* Font size for label */
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                });
+            })();
+        {% endfor %}
+    });
+    </script>
+
 {% endblock %}

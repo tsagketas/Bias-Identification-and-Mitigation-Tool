@@ -138,24 +138,28 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
   $(document).ready(function () {
-    function updateIntersectionOptions(attribute) {
-      var selectedAttributes = [];
-      $('input[name="attribute"]:checked').each(function () {
-        selectedAttributes.push($(this).val());
-      });
-      var options = '<option value="">Select Attribute</option>';
-      {% for attr in data %}
-      if (selectedAttributes.indexOf('{{ attr.name }}') === -1 && '{{ attr.name }}' !== 'Score' && '{{ attr.name }}' !== 'Label_value') {
-        options += '<option value="{{ attr.name }}">{{ attr.name }}</option>';
-      }
-      {% endfor %}
-      $('select[name^="intersection_attribute_"]').each(function () {
-        var currentAttribute = $(this).val();
-        $(this).html(options);
-        if (currentAttribute && selectedAttributes.indexOf(currentAttribute) === -1) {
-          $(this).val(currentAttribute);
+    function updateIntersectionOptions(attribute, currentRow) {
+        var selectedAttributes = [];
+        // Check the checkbox right above the current row
+        var previousRow = currentRow.prevAll('.attribute-row:first');
+        previousRow.find('input[name="attribute"]:checked').each(function () {
+            selectedAttributes.push($(this).val());
+        });
+
+        var options = '<option value="">Select Attribute</option>';
+        {% for attr in data %}
+        if (selectedAttributes.indexOf('{{ attr.name }}') === -1 && '{{ attr.name }}' !== 'Score' && '{{ attr.name }}' !== 'Label_value') {
+            options += '<option value="{{ attr.name }}">{{ attr.name }}</option>';
         }
-      });
+        {% endfor %}
+
+        currentRow.find('select[name^="intersection_attribute_"]').each(function () {
+            var currentAttribute = $(this).val();
+            $(this).html(options);
+            if (currentAttribute && selectedAttributes.indexOf(currentAttribute) === -1) {
+                $(this).val(currentAttribute);
+            }
+        });
     }
 
     $('#attributeForm').on('click', '.add-intersection', function () {
@@ -216,7 +220,7 @@
                 unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
             });
         });
-        updateIntersectionOptions(attribute);
+        updateIntersectionOptions(attribute, $newRow);
     });
 
     $('#attributeForm').on('click', '.remove-intersection', function () {
@@ -224,7 +228,6 @@
         $row.prev('.attribute-row').find('.add-intersection').show();
         $row.next('.separator').remove();
         $row.remove();
-        updateIntersectionOptions();
     });
 
     $('#button').click(function () {
@@ -265,7 +268,7 @@
             atts_n_values_picked.push(selectedAttribute); // Add the selected attribute to the main array
         });
 
-       // AJAX call to /metric route
+        // AJAX call to /metric route
         $.ajax({
             url: '/metric',
             type: 'POST',
@@ -290,6 +293,8 @@
     $('input[name="attribute"]').change(function () {
         updateIntersectionOptions();
     });
-  });
+});
+
+
 </script>
 {% endblock %}
