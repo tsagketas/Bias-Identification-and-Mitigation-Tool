@@ -334,7 +334,6 @@ def get_fairness_metrics(atts_n_vals, path_to_csv, metrics_to_calculate, thresho
         else:
             results.extend(calculate_standard_metrics(att, df, label_encoders, metrics_to_calculate, threshold))
 
-    print(group_results_by_metric(results))
     return group_results_by_metric(results)
 
 def group_results_by_metric(results):
