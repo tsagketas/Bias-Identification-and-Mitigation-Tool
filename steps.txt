@@ -24,3 +24,6 @@ Algorith Result Page:
         - sees the results of the unfair metrics ( and maybe downloads a new mitigated dataset )
 
 
+myenv\Scripts\activate
+source myenv/bin/activate
+pip install -r requirements.txt
