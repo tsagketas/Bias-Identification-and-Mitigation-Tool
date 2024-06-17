@@ -97,6 +97,7 @@
             height: 100%;
             width: 100%;
         }
+
         .chartjs-size-monitor {
             width: 100% !important;
             height: 100% !important;
@@ -113,6 +114,40 @@
         <img class="image" src="{{ url_for('static', filename='chain_4.png') }}">
         <br>
     </div>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header text-center" style="background-color: #f8f9fa;">
+                        <h4 style="color: #6c757d;">Model Metrics</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-bordered text-center">
+                            <thead>
+                            <tr>
+                                <th>Accuracy</th>
+                                <th>F1 Score</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>{{ model_metrics['accuracy'] | round(4) }}</td>
+                                <td>{{ model_metrics['f1_score'] | round(4) }}</td>
+                                <td>{{ model_metrics['precision'] | round(4) }}</td>
+                                <td>{{ model_metrics['recall'] | round(4) }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="container table-container">
         {% for metric, metric_data in data.items() %}
             <div class="row steps">
@@ -123,7 +158,8 @@
                             <tr>
                                 <th colspan="{{ metric_data|length + 1 }}">
                                     <div class="table-title">{{ metric.replace('_', ' ').title() }}</div>
-                                    <div class="table-subtitle">The ideal value of this metric is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
+                                    <div class="table-subtitle">The ideal value of this metric
+                                        is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
                                 </th>
                             </tr>
                             </thead>
@@ -181,122 +217,122 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const threshold = {{ threshold | tojson }} / 100;
+        document.addEventListener('DOMContentLoaded', function () {
+            const threshold = {{ threshold | tojson }} / 100;
 
-        {% for metric, metric_data in data.items() %}
-            (function () {
-                var ctx = document.getElementById('chart-{{ loop.index }}').getContext('2d');
-                var idealValue = {{ metric_data[0]['Ideal_Fairness_Value'] | tojson }};
-                var lowerBound, upperBound;
+            {% for metric, metric_data in data.items() %}
+                (function () {
+                    var ctx = document.getElementById('chart-{{ loop.index }}').getContext('2d');
+                    var idealValue = {{ metric_data[0]['Ideal_Fairness_Value'] | tojson }};
+                    var lowerBound, upperBound;
 
-                if (idealValue === 0) {
-                    lowerBound = -2 * threshold;
-                    upperBound = 2 * threshold;
-                } else {
-                    lowerBound = idealValue * threshold;
-                    upperBound = idealValue / threshold;
-                }
+                    if (idealValue === 0) {
+                        lowerBound = -2 * threshold;
+                        upperBound = 2 * threshold;
+                    } else {
+                        lowerBound = idealValue * threshold;
+                        upperBound = idealValue / threshold;
+                    }
 
-                var labels = [];
-                var values = [];
+                    var labels = [];
+                    var values = [];
 
-                {% for el in metric_data %}
-                    var unprivilegedGroupLabel = '{{ el['Unprivileged_Group'] }}';
-                    {% for intersection in el['Intersectional_Attributes'] %}
-                        unprivilegedGroupLabel += ' {{ intersection['unprivileged'] }}';
+                    {% for el in metric_data %}
+                        var unprivilegedGroupLabel = '{{ el['Unprivileged_Group'] }}';
+                        {% for intersection in el['Intersectional_Attributes'] %}
+                            unprivilegedGroupLabel += ' {{ intersection['unprivileged'] }}';
+                        {% endfor %}
+                        unprivilegedGroupLabel = unprivilegedGroupLabel.trim();
+
+                        labels.push(unprivilegedGroupLabel);
+                        values.push({{ '%.4f' | format(el['Values']) }});
                     {% endfor %}
-                    unprivilegedGroupLabel = unprivilegedGroupLabel.trim();
 
-                    labels.push(unprivilegedGroupLabel);
-                    values.push({{ '%.4f' | format(el['Values']) }});
-                {% endfor %}
-
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '{{ metric.replace('_', ' ').title() }}',
-                            data: values,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero: true,
-                                    suggestedMax: 2 /* Ensure visibility above 1 */
-                                },
-                                gridLines: {
-                                    color: "rgba(0, 0, 0, 0.1)"
-                                }
-                            }],
-                            xAxes: [{
-                                ticks: {
-                                    maxRotation: 0,
-                                    minRotation: 0,
-                                    callback: function(value) {
-                                        return value.split(" "); // Adjusts label split to be closer
-                                    }
-                                },
-                                gridLines: {
-                                    display: false
-                                },
-                                barPercentage: 0.5, // Adjusts the bar width
-                                categoryPercentage: 0.5 // Adjusts the space between bars
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: '{{ metric.replace('_', ' ').title() }}',
+                                data: values,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
                             }]
                         },
-                        tooltips: {
-                            callbacks: {
-                                label: function(tooltipItem, data) {
-                                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
-                                    if (label) {
-                                        label += ': ';
+                        options: {
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        beginAtZero: true,
+                                        suggestedMax: 2 /* Ensure visibility above 1 */
+                                    },
+                                    gridLines: {
+                                        color: "rgba(0, 0, 0, 0.1)"
                                     }
-                                    label += tooltipItem.yLabel;
-                                    var group = data.labels[tooltipItem.index];
-                                    label += ' (Group: ' + group + ')';
-                                    return label;
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        maxRotation: 0,
+                                        minRotation: 0,
+                                        callback: function (value) {
+                                            return value.split(" "); // Adjusts label split to be closer
+                                        }
+                                    },
+                                    gridLines: {
+                                        display: false
+                                    },
+                                    barPercentage: 0.5, // Adjusts the bar width
+                                    categoryPercentage: 0.5 // Adjusts the space between bars
+                                }]
+                            },
+                            tooltips: {
+                                callbacks: {
+                                    label: function (tooltipItem, data) {
+                                        var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += tooltipItem.yLabel;
+                                        var group = data.labels[tooltipItem.index];
+                                        label += ' (Group: ' + group + ')';
+                                        return label;
+                                    }
                                 }
+                            },
+                            annotation: {
+                                annotations: [
+                                    {
+                                        type: 'line',
+                                        mode: 'horizontal',
+                                        scaleID: 'y-axis-0',
+                                        value: idealValue,
+                                        borderColor: 'black', /* Threshold line color */
+                                        borderWidth: 1,
+                                    },
+                                    {
+                                        type: 'box',
+                                        yScaleID: 'y-axis-0',
+                                        yMin: lowerBound,
+                                        yMax: upperBound,
+                                        backgroundColor: 'rgba(144, 238, 144, 0.2)', // Light green
+                                        borderColor: 'rgba(144, 238, 144, 0.5)',
+                                        borderWidth: 1,
+                                        label: {
+                                            enabled: true,
+                                            content: 'Fairness Area',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.4)', /* Background color for label */
+                                            fontColor: 'white', /* Font color for label */
+                                            fontSize: 8 /* Font size for label */
+                                        }
+                                    }
+                                ]
                             }
-                        },
-                        annotation: {
-                            annotations: [
-                                {
-                                    type: 'line',
-                                    mode: 'horizontal',
-                                    scaleID: 'y-axis-0',
-                                    value: idealValue,
-                                    borderColor: 'black', /* Threshold line color */
-                                    borderWidth: 1,
-                                },
-                                {
-                                    type: 'box',
-                                    yScaleID: 'y-axis-0',
-                                    yMin: lowerBound,
-                                    yMax: upperBound,
-                                    backgroundColor: 'rgba(144, 238, 144, 0.2)', // Light green
-                                    borderColor: 'rgba(144, 238, 144, 0.5)',
-                                    borderWidth: 1,
-                                    label: {
-                                        enabled: true,
-                                        content: 'Fairness Area',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.4)', /* Background color for label */
-                                        fontColor: 'white', /* Font color for label */
-                                        fontSize: 8 /* Font size for label */
-                                    }
-                                }
-                            ]
                         }
-                    }
-                });
-            })();
-        {% endfor %}
-    });
+                    });
+                })();
+            {% endfor %}
+        });
     </script>
 
 {% endblock %}
