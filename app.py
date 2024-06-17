@@ -13,18 +13,22 @@ import constants
 app = Flask(__name__, template_folder='templates')
 app.config['FILES_UPLOADS'] = r'C:\Users\ceid6\Desktop\diplomatiki\static\Uploaded_files'
 TEMPLATES_AUTO_RELOAD = True
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 global protected_variables, fairness_metrics, mitigation_algorithms, protected_variables_values
 
 
 @app.route('/')
 def index():
+    import flask
+    print(flask.__version__)
     return render_template('index.html')
 
 
 @app.route('/selection', methods=['GET', 'POST'])
 def selection():
     return render_template("selection.html")
+
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -35,44 +39,56 @@ def upload():
             file_to_upload.save(file_path)
             app.config["UPLOADED_FILE"] = file_path
             app.config["DATASET"] = "upload"
-            return jsonify({"success": True, "message": "File uploaded successfully!"})
+
+            # Check if 'outcome' column exists
+            import pandas as pd
+            df = pd.read_csv(file_path)
+            if 'outcome' in df.columns:
+                return jsonify({"success": True, "message": "File uploaded successfully !"})
+            else:
+                return jsonify({"success": False,
+                                "message": "No column 'outcome' found. Please rename your prediction column to 'outcome'."})
     return jsonify({"success": False, "message": "No file uploaded."})
 
 
 @app.route('/Choose_att', defaults={'dataset': None}, methods=['GET', 'POST'])
 @app.route('/Choose_att/<dataset>', methods=['GET', 'POST'])
 def Choose_att(dataset):
-    if not dataset:
-        if request.method == 'POST' and request.files['file']:
+    selected_model = request.form.get('selected_models')
 
-            app.config['SELECTED_MODEL'] = selected_model
+    app.config['SELECTED_MODEL'] = selected_model
 
-        return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
-    else:
-        data = []
-        app.config["DATASET"] = dataset
-        if dataset == "Adult":
-            obj = AttsnValues("sex")
-            obj.addValue(" Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-            obj1 = AttsnValues("race")
-            obj1.addValue(
-                "White is considered privileged (value = 1) and Non-white is considered unprivileged (value = 0)")
-        elif dataset == "German":
-            obj = AttsnValues("sex")
-            obj.addValue("Male is  considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-            obj1 = AttsnValues("age")
-            obj1.addValue(
-                " age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)")
-        else:
-            obj = AttsnValues("sex")
-            obj.addValue("Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)")
-            obj1 = AttsnValues("race")
-            obj1.addValue(
-                "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)")
-        data.append(obj)
-        data.append(obj1)
-        return render_template("chooseAtt.html", data=data, dataset=dataset)
-        # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
+    return render_template("chooseAtt.html", data=att_values.dataset_parse(app.config["UPLOADED_FILE"]))
+    # if not dataset:
+    #     if request.method == 'POST' and request.files['file']:
+    #
+    #
+    #         return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
+    # else:
+    #     data = []
+    #     app.config["DATASET"] = dataset
+    #     if dataset == "Adult":
+    #         obj = AttsnValues("sex")
+    #         obj.addValue(" Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
+    #         obj1 = AttsnValues("race")
+    #         obj1.addValue(
+    #             "White is considered privileged (value = 1) and Non-white is considered unprivileged (value = 0)")
+    #     elif dataset == "German":
+    #         obj = AttsnValues("sex")
+    #         obj.addValue("Male is  considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
+    #         obj1 = AttsnValues("age")
+    #         obj1.addValue(
+    #             " age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)")
+    #     else:
+    #         obj = AttsnValues("sex")
+    #         obj.addValue("Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)")
+    #         obj1 = AttsnValues("race")
+    #         obj1.addValue(
+    #             "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)")
+    #     data.append(obj)
+    #     data.append(obj1)
+    #     return render_template("chooseAtt.html", data=data, dataset=dataset)
+    #     # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
 
 
 @app.route('/metric', methods=['GET', 'POST'])
