@@ -2,47 +2,40 @@ from typing import List, Union, Dict
 import os
 import json
 import itertools
+from collections import defaultdict
 from tqdm import tqdm
+import warnings
 
-# Modelling. Warnings will be used to silence various model warnings for tidier output
 import numpy as np
-import sklearn
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 from sklearn.exceptions import DataConversionWarning
-from sklearn.preprocessing import LabelEncoder
-from sklearn import metrics
-from sklearn.metrics import confusion_matrix
-import warnings
-import math
+from sklearn.base import TransformerMixin
+from sklearn.pipeline import Pipeline, FeatureUnion
+
 import tensorflow.compat.v1 as tf
 
-tf.compat.v1.disable_eager_execution()
+tf.disable_eager_execution()
 
-# Data handling/display
-import pandas as pd
-import numpy as np
-import time
-import matplotlib.pyplot as plt
-import seaborn as sns
-from collections import defaultdict
-
-
-# IBM's fairness tooolbox:
-from aif360.datasets import BinaryLabelDataset, StandardDataset  # To handle the data
-from aif360.metrics import BinaryLabelDatasetMetric, ClassificationMetric  # For calculating metrics
-from aif360.explainers import MetricTextExplainer  # For explaining metrics
+from aif360.datasets import BinaryLabelDataset
+from aif360.metrics import ClassificationMetric
+from aif360.explainers import MetricTextExplainer
 from aif360.algorithms.preprocessing import Reweighing, DisparateImpactRemover
 from aif360.algorithms.inprocessing import AdversarialDebiasing, PrejudiceRemover, MetaFairClassifier
 from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing, EqOddsPostprocessing, \
     RejectOptionClassification
 
-from sklearn.base import TransformerMixin
-from sklearn.pipeline import Pipeline, FeatureUnion
-
-# For the logistic regression model
-from sklearn.preprocessing import StandardScaler
+# Disable warnings for cleaner output
+warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
 
 class MetricAdditions:
@@ -70,46 +63,178 @@ class MetricTextExplainer_(MetricTextExplainer, MetricAdditions):
     pass
 
 
-def preprocess_dataset(df, catCols, numCols, targets):
-    # atts=[]
-
-    df = df.fillna(df.mean())
-
-    for col in catCols:
-        df[col] = df[col].fillna("Missing value")
-
-    # for col in catCols:
-    #     for c in df[col].values:
-    #         if (col+":"+c) not in atts:
-    #             colname=col+":"+ c
-    #             atts.append(colname)
-
-    # for col in numCols:
-    #     for c in df[col].values:
-    #         if (col+":"+str(c)) not in atts:
-    #             colname=col+":"+str(c)
-    #             atts.append(colname)            
-
-    for col in catCols:
-        df_onehot = pd.concat([df[col], pd.get_dummies(df[col])], axis=1)
-        df_onehot = df_onehot.drop([col], axis=1)
-        df = df.drop([col], axis=1)
-        df = pd.concat([df, df_onehot], axis=1)
-
-    # for col in numCols:
-    #     df_onehot = pd.concat([df[col], pd.get_dummies(df[col]).rename(columns=lambda x:col)], axis=1)
-    #     df_onehot=df_onehot.drop([col], axis=1)
-    #     df=df.drop([col], axis=1)
-    #     df=pd.concat([df,df_onehot],axis=1)    
-
-    df2 = pd.concat([targets['Label_value'], df], axis=1)
-    df2 = df2.rename(columns={'Label_value': 'Score'})
-    df = pd.concat([targets['Score'], df], axis=1)
-
-    return df, df2
+# Function to prepare the data
+def prepare_data(path_to_csv):
+    df = pd.read_csv(path_to_csv)
+    df, label_encoders = encode_categorical_variables(df)
+    X = df.drop('outcome', axis=1)
+    y = df['outcome']
+    return X, y, label_encoders
 
 
-def fair_check(metric_value, ideal_value, threshold):
+# Function to encode categorical variables
+def encode_categorical_variables(df):
+    label_encoders = {}
+    for column in df.select_dtypes(include=['object']).columns:
+        le = LabelEncoder()
+        df[column] = le.fit_transform(df[column])
+        label_encoders[column] = le
+    return df, label_encoders
+
+
+# Function to train the selected model
+def train_model(model_name, X_train, y_train):
+    if model_name == "logistic_regression":
+        model = LogisticRegression()
+    elif model_name == "naive_bayes":
+        model = GaussianNB()
+    elif model_name == "random_forest":
+        model = RandomForestClassifier()
+    elif model_name == "svm":
+        model = SVC(probability=True)
+    else:
+        raise ValueError(f"Model {model_name} is not supported.")
+
+    model.fit(X_train, y_train)
+    return model
+
+
+# Function to calculate model metrics
+def calculate_model_metrics(model, X_test, y_test):
+    y_pred = model.predict(X_test)
+    metrics = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'f1_score': f1_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred)
+    }
+    return metrics, y_pred
+
+
+# Function to convert to BinaryLabelDataset
+def convert_to_binary_label_dataset(X, y, label_encoders, label_name='label'):
+    df = X.copy()
+    df[label_name] = y
+    return BinaryLabelDataset(df=df, label_names=[label_name], protected_attribute_names=list(label_encoders.keys()))
+
+
+# Function to calculate fairness metrics
+def calculate_fairness_metrics(X, y_true, y_pred, label_encoders, atts_n_vals_picked, metrics_to_calculate, threshold):
+    results = []
+    ground_truth_dataset = convert_to_binary_label_dataset(X, y_true, label_encoders, label_name='true_label')
+    predicted_dataset = ground_truth_dataset.copy()
+    predicted_dataset.labels = y_pred.reshape(-1, 1)
+
+    for att in atts_n_vals_picked:
+        if 'intersection' in att and att['intersection']:
+            for intersection_att in att['intersection']:
+                results.extend(
+                    calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset,
+                                                     label_encoders, metrics_to_calculate, threshold))
+        else:
+            results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,
+                                                      metrics_to_calculate, threshold))
+
+    return group_results_by_metric(results)
+
+
+# Function to calculate standard metrics
+def calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders, metrics_to_calculate,
+                               threshold):
+    results = []
+
+    privileged_group = [{att['attribute']: label_encoders[att['attribute']].transform([att['privileged']])[0]}]
+    unprivileged_group = [{att['attribute']: label_encoders[att['attribute']].transform([att['unprivileged']])[0]}]
+
+    metric = ClassificationMetric(ground_truth_dataset, predicted_dataset, privileged_groups=privileged_group,
+                                  unprivileged_groups=unprivileged_group)
+
+    for metric_name in metrics_to_calculate:
+        metric_value = getattr(metric, metric_name)()
+        if not fair_check(metric_value, metric_name, threshold):
+            metric_info = construct_metric_info(metric_name, metric_value, [att['attribute']], att['privileged'],
+                                                att['unprivileged'])
+            results.append(metric_info)
+
+    return results
+
+
+# Function to calculate intersectional metrics
+def calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset, label_encoders,
+                                     metrics_to_calculate, threshold):
+    results = []
+
+    privileged_group = [
+        {
+            att['attribute']: label_encoders[att['attribute']].transform([att['privileged']])[0],
+            intersection_att['attribute']:
+                label_encoders[intersection_att['attribute']].transform([intersection_att['privileged']])[0]
+        }
+    ]
+    unprivileged_group = [
+        {
+            att['attribute']: label_encoders[att['attribute']].transform([att['unprivileged']])[0],
+            intersection_att['attribute']:
+                label_encoders[intersection_att['attribute']].transform([intersection_att['unprivileged']])[0]
+        }
+    ]
+
+    metric = ClassificationMetric(ground_truth_dataset, predicted_dataset, privileged_groups=privileged_group,
+                                  unprivileged_groups=unprivileged_group)
+
+    for metric_name in metrics_to_calculate:
+        metric_value = getattr(metric, metric_name)()
+        if not fair_check(metric_value, metric_name, threshold):
+            metric_info = construct_metric_info(metric_name, metric_value,
+                                                [att['attribute'], intersection_att['attribute']], att['privileged'],
+                                                att['unprivileged'], intersectional_attributes=[intersection_att])
+            results.append(metric_info)
+
+    return results
+
+
+# Function to construct metric information
+def construct_metric_info(metric_name, metric_value, protected_attributes, privileged_group, unprivileged_group,
+                          intersectional_attributes=None):
+    info = {
+        'Metric': metric_name,
+        'Protected_Attributes': protected_attributes,
+        'Values': metric_value,
+        'Privileged_Group': privileged_group,
+        'Unprivileged_Group': unprivileged_group,
+        'Intersectional_Attributes': intersectional_attributes if intersectional_attributes else []
+    }
+    return info
+
+    # Function to group results by metric
+
+
+def get_ideal_fairness_value(metric_name):
+    if metric_name in ['disparate_impact']:
+        return 1.0
+    else:
+        return 0.0
+
+
+# Function to group results by metric
+def group_results_by_metric(results):
+    grouped_results = defaultdict(list)
+    for result in results:
+        grouped_results[result['Metric']].append({
+            'Protected_Attributes': result['Protected_Attributes'],
+            'Values': result['Values'],
+            'Ideal_Fairness_Value': get_ideal_fairness_value(result['Metric']),
+            'Privileged_Group': result['Privileged_Group'],
+            'Unprivileged_Group': result['Unprivileged_Group'],
+            'Intersectional_Attributes': result.get('Intersectional_Attributes', [])
+        })
+    return grouped_results
+
+
+# Function to check fairness
+def fair_check(metric_value, metric_name, threshold):
+    ideal_value = 1 if metric_name in ['disparate_impact'] else 0
+
     try:
         threshold = float(threshold)
     except ValueError as e:
@@ -122,332 +247,26 @@ def fair_check(metric_value, ideal_value, threshold):
     else:
         return False
 
-def construct_metric_info(metric_name, metric_value, ideal_value, protected_attributes, privileged_group,
-                          unprivileged_group, intersectional_attributes=None):
-    info = {
-        'Metric': metric_name,
-        'Protected_Attributes': protected_attributes,
-        'Values': metric_value,
-        'Ideal_Fairness_Value': ideal_value,
-        'Privileged_Group': privileged_group,
-        'Unprivileged_Group': unprivileged_group
-    }
-    if intersectional_attributes:
-        info['Intersectional_Attributes'] = intersectional_attributes
-    return info
 
-def encode_categorical_variables(df):
-    label_encoders = {}
-    for column in df.select_dtypes(include=['object']).columns:
-        le = LabelEncoder()
-        df[column] = le.fit_transform(df[column])
-        label_encoders[column] = le
-    return df, label_encoders
+# Function to train and evaluate the model
+def train_and_evaluate(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold):
+    X, y, label_encoders = prepare_data(path_to_csv)
 
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-def calculate_intersectional_metrics(att, intersection_att, df, label_encoders, threshold):
-    results = []
+    # Train the model
+    model = train_model(model_name, X_train, y_train)
 
-    # Encode the privileged and unprivileged groups for primary and intersectional attributes
-    privileged_primary = label_encoders[att['attribute']].transform([att['privileged']])[0]
-    unprivileged_primary = label_encoders[att['attribute']].transform([att['unprivileged']])[0]
+    # Calculate model metrics
+    model_metrics, y_pred = calculate_model_metrics(model, X_test, y_test)
 
-    privileged_intersection = label_encoders[intersection_att['attribute']].transform([intersection_att['privileged']])[
-        0]
-    unprivileged_intersection = \
-    label_encoders[intersection_att['attribute']].transform([intersection_att['unprivileged']])[0]
+    # Calculate fairness metrics
+    fairness_metrics = calculate_fairness_metrics(X_test, y_test, y_pred, label_encoders, atts_n_vals_picked,
+                                                  metrics_to_calculate, threshold)
 
-    # Create the BinaryLabelDataset with the entire dataset
-    binary_label_dataset_intersection = BinaryLabelDataset(
-        df=df,
-        label_names=['Label_value'],
-        protected_attribute_names=[att['attribute'], intersection_att['attribute']]
-    )
+    return model_metrics, fairness_metrics
 
-    # Define the unprivileged and privileged intersection groups
-    unprivileged_intersection_groups = [
-        {
-            att['attribute']: unprivileged_primary,
-            intersection_att['attribute']: unprivileged_intersection
-        }
-    ]
-
-    privileged_intersection_groups = [
-        {
-            att['attribute']: privileged_primary,
-            intersection_att['attribute']: privileged_intersection
-        }
-    ]
-
-    # Instantiate the metric object for the intersectional dataset
-    metric_intersection = BinaryLabelDatasetMetric(
-        binary_label_dataset_intersection,
-        unprivileged_groups=unprivileged_intersection_groups,
-        privileged_groups=privileged_intersection_groups
-    )
-
-    # Define the metrics to calculate
-    metrics_to_calculate_intersection = {
-        "mean_difference": metric_intersection.mean_difference,
-        "disparate_impact": metric_intersection.disparate_impact,
-    }
-
-    # Calculate and check each metric
-    for metric_name, metric_func in metrics_to_calculate_intersection.items():
-        metric_value = metric_func()
-        if not fair_check(metric_value, 0 if metric_name == 'mean_difference' else 1, threshold):
-            results.append(construct_metric_info(
-                metric_name,
-                metric_value,
-                0 if metric_name == 'mean_difference' else 1,
-                [att['attribute'], intersection_att['attribute']],
-                att['privileged'],
-                att['unprivileged'],
-                intersectional_attributes=[{
-                    'attribute': intersection_att['attribute'],
-                    'privileged': intersection_att['privileged'],
-                    'unprivileged': intersection_att['unprivileged']
-                }]
-            ))
-
-    return results
-
-
-
-# def calculate_intersectional_metrics(att, intersection_att, df, label_encoders, threshold):
-#     results = []
-#     privileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['privileged']])[0]}]
-#     unprivileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['unprivileged']])[0]}]
-#
-#     filtered_df = df[(df[att['attribute']].isin(
-#         [privileged_groups[0][att['attribute']], unprivileged_groups[0][att['attribute']]])) &
-#                      (df[intersection_att['attribute']].isin(
-#                          [label_encoders[intersection_att['attribute']].transform([intersection_att['privileged']])[0],
-#                           label_encoders[intersection_att['attribute']].transform([intersection_att['unprivileged']])[
-#                               0]]))]
-#
-#     binary_label_dataset_intersection = BinaryLabelDataset(
-#         df=filtered_df,
-#         label_names=['Label_value'],
-#         protected_attribute_names=[att['attribute'], intersection_att['attribute']]
-#     )
-#
-#     unprivileged_intersection_groups = [{att['attribute']: unprivileged_groups[0][att['attribute']],
-#                                          intersection_att['attribute']:
-#                                              label_encoders[intersection_att['attribute']].transform(
-#                                                  [intersection_att['unprivileged']])[0]}]
-#     privileged_intersection_groups = [{att['attribute']: privileged_groups[0][att['attribute']],
-#                                        intersection_att['attribute']:
-#                                            label_encoders[intersection_att['attribute']].transform(
-#                                                [intersection_att['privileged']])[0]}]
-#
-#     metric_intersection = BinaryLabelDatasetMetric(
-#         binary_label_dataset_intersection,
-#         unprivileged_groups=unprivileged_intersection_groups,
-#         privileged_groups=privileged_intersection_groups
-#     )
-#
-#     metrics_to_calculate_intersection = {
-#         "mean_difference": metric_intersection.mean_difference,
-#         "disparate_impact": metric_intersection.disparate_impact,
-#     }
-#
-#     for metric_name, metric_func in metrics_to_calculate_intersection.items():
-#         metric_value = metric_func()
-#         if not fair_check(metric_value, 0 if metric_name == 'mean_difference' else 1, threshold):
-#             results.append(construct_metric_info(
-#                 metric_name,
-#                 metric_value,
-#                 0 if metric_name == 'mean_difference' else 1,
-#                 [att['attribute'], intersection_att['attribute']],
-#                 att['privileged'],
-#                 att['unprivileged'],
-#                 intersectional_attributes=[{
-#                     'attribute': intersection_att['attribute'],
-#                     'privileged': intersection_att['privileged'],
-#                     'unprivileged': intersection_att['unprivileged']
-#                 }]
-#             ))
-#
-#     return results
-
-def calculate_standard_metrics(att, df, label_encoders, metrics_to_calculate, threshold):
-    results = []
-    privileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['privileged']])[0]}]
-    unprivileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['unprivileged']])[0]}]
-
-    binary_label_dataset = BinaryLabelDataset(df=df,
-                                              label_names=['Label_value'],
-                                              protected_attribute_names=[att['attribute']])
-
-    df_pred = df.copy()
-    df_pred['Label_value'] = df_pred['Score']
-
-    predicted_dataset = BinaryLabelDataset(df=df_pred,
-                                           label_names=['Label_value'],
-                                           protected_attribute_names=[att['attribute']])
-
-    metric = BinaryLabelDatasetMetric(binary_label_dataset,
-                                      unprivileged_groups=unprivileged_groups,
-                                      privileged_groups=privileged_groups)
-
-    classified_metric = ClassificationMetric(binary_label_dataset, predicted_dataset,
-                                             unprivileged_groups=unprivileged_groups,
-                                             privileged_groups=privileged_groups)
-
-    metrics_to_calculate_funcs = {
-        'mean_difference': (metric.mean_difference, 0),
-        'disparate_impact': (metric.disparate_impact, 1),
-        'false_discovery_rate_difference': (classified_metric.false_discovery_rate_difference, 0),
-        'false_positive_rate_difference': (classified_metric.false_positive_rate_difference, 0),
-        'false_omission_rate_difference': (classified_metric.false_omission_rate_difference, 0),
-        'false_negative_rate_difference': (classified_metric.false_negative_rate_difference, 0),
-        'average_odds_difference': (classified_metric.average_odds_difference, 0),
-        'equal_opportunity_difference': (classified_metric.equal_opportunity_difference, 0)
-    }
-
-    for metric_name in metrics_to_calculate:
-        if metric_name in metrics_to_calculate_funcs:
-            metric_func, ideal_value = metrics_to_calculate_funcs[metric_name]
-            metric_value = metric_func()
-            if not fair_check(metric_value, ideal_value, threshold):
-                results.append(construct_metric_info(
-                    metric_name,
-                    metric_value,
-                    ideal_value,
-                    [att['attribute']],
-                    att['privileged'],
-                    att['unprivileged']
-                ))
-
-    return results
-
-def get_fairness_metrics(atts_n_vals, path_to_csv, metrics_to_calculate, threshold):
-    df = pd.read_csv(path_to_csv)
-    df, label_encoders = encode_categorical_variables(df)
-    results = []
-
-    for att in atts_n_vals:
-        if 'intersection' in att and att['intersection']:
-            for intersection_att in att['intersection']:
-                results.extend(calculate_intersectional_metrics(att, intersection_att, df, label_encoders, threshold))
-        else:
-            results.extend(calculate_standard_metrics(att, df, label_encoders, metrics_to_calculate, threshold))
-
-    return group_results_by_metric(results)
-
-def group_results_by_metric(results):
-    grouped_results = defaultdict(list)
-    for result in results:
-        grouped_results[result['Metric']].append({
-            'Protected_Attributes': result['Protected_Attributes'],
-            'Values': result['Values'],
-            'Ideal_Fairness_Value': result['Ideal_Fairness_Value'],
-            'Privileged_Group': result['Privileged_Group'],
-            'Unprivileged_Group': result['Unprivileged_Group'],
-            'Intersectional_Attributes': result.get('Intersectional_Attributes', [])
-        })
-    return grouped_results
-
-# def get_fairness_metrics(atts_n_vals, path_to_csv, metrics_to_calculate,threshold):
-#     # Load the dataset
-#     df = pd.read_csv(path_to_csv)
-#
-#
-#     # Encode categorical variables
-#     label_encoders = {}
-#     for column in df.select_dtypes(include=['object']).columns:
-#         le = LabelEncoder()
-#         df[column] = le.fit_transform(df[column])
-#         label_encoders[column] = le
-#
-#     results = {}
-#
-#     for att in atts_n_vals:
-#         privileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['privileged']])[0]}]
-#         unprivileged_groups = [{att['attribute']: label_encoders[att['attribute']].transform([att['unprivileged']])[0]}]
-#
-#         # Check if intersectional attributes are provided
-#         if 'intersection' in att:
-#             for intersection_att in att['intersection']:
-#                 # Filter the DataFrame for intersectional analysis
-#                 filtered_df = df[(df[att['attribute']].isin([privileged_groups[0][att['attribute']], unprivileged_groups[0][att['attribute']]])) &
-#                                  (df[intersection_att['attribute']].isin([label_encoders[intersection_att['attribute']].transform([intersection_att['privileged']])[0],
-#                                                                           label_encoders[intersection_att['attribute']].transform([intersection_att['unprivileged']])[0]]))]
-#
-#                 binary_label_dataset_intersection = BinaryLabelDataset(
-#                     df=filtered_df,
-#                     label_names=['Label_value'],
-#                     protected_attribute_names=[att['attribute'], intersection_att['attribute']]
-#                 )
-#
-#                 unprivileged_intersection_groups = [{att['attribute']: unprivileged_groups[0][att['attribute']],
-#                                                      intersection_att['attribute']: label_encoders[intersection_att['attribute']].transform([intersection_att['unprivileged']])[0]}]
-#                 privileged_intersection_groups = [{att['attribute']: privileged_groups[0][att['attribute']],
-#                                                    intersection_att['attribute']: label_encoders[intersection_att['attribute']].transform([intersection_att['privileged']])[0]}]
-#
-#                 metric_intersection = BinaryLabelDatasetMetric(
-#                     binary_label_dataset_intersection,
-#                     unprivileged_groups=unprivileged_intersection_groups,
-#                     privileged_groups=privileged_intersection_groups
-#                 )
-#
-#                 results[f"{att['attribute']}_{intersection_att['attribute']}_mean_difference"] = metric_intersection.mean_difference()
-#                 results[f"{att['attribute']}_{intersection_att['attribute']}_disparate_impact"] = metric_intersection.disparate_impact()
-#
-#         else:
-#             # Create BinaryLabelDataset for true labels
-#             binary_label_dataset = BinaryLabelDataset(df=df,
-#                                                       label_names=['Label_value'],
-#                                                       protected_attribute_names=[att['attribute']])
-#
-#             # Create a copy of the dataset for predictions
-#             df_pred = df.copy()
-#             df_pred['Label_value'] = df_pred['Score']
-#
-#             # Create BinaryLabelDataset for predicted scores
-#             predicted_dataset = BinaryLabelDataset(df=df_pred,
-#                                                    label_names=['Label_value'],
-#                                                    protected_attribute_names=[att['attribute']])
-#
-#             # Initialize the metric objects
-#             metric = BinaryLabelDatasetMetric(binary_label_dataset,
-#                                               unprivileged_groups=unprivileged_groups,
-#                                               privileged_groups=privileged_groups)
-#
-#             classified_metric = ClassificationMetric(binary_label_dataset, predicted_dataset,
-#                                                      unprivileged_groups=unprivileged_groups,
-#                                                      privileged_groups=privileged_groups)
-#
-#             # Calculate the specified metrics
-#             for metric_name in metrics_to_calculate:
-#                 if metric_name == 'mean_difference':
-#                     results[f"{att['attribute']}_mean_difference"] = metric.mean_difference()
-#                 elif metric_name == 'disparate_impact':
-#                     results[f"{att['attribute']}_disparate_impact"] = metric.disparate_impact()
-#                 elif metric_name == 'false_discovery_rate_difference':
-#                     results[f"{att['attribute']}_false_discovery_rate_difference"] = classified_metric.false_discovery_rate_difference()
-#                 elif metric_name == 'false_positive_rate_difference':
-#                     results[f"{att['attribute']}_false_positive_rate_difference"] = classified_metric.false_positive_rate_difference()
-#                 elif metric_name == 'false_omission_rate_difference':
-#                     results[f"{att['attribute']}_false_omission_rate_difference"] = classified_metric.false_omission_rate_difference()
-#                 elif metric_name == 'false_negative_rate_difference':
-#                     results[f"{att['attribute']}_false_negative_rate_difference"] = classified_metric.false_negative_rate_difference()
-#                 elif metric_name == 'average_odds_difference':
-#                     results[f"{att['attribute']}_average_odds_difference"] = classified_metric.average_odds_difference()
-#                 elif metric_name == 'equal_opportunity_difference':
-#                     results[f"{att['attribute']}_equal_opportunity_difference"] = classified_metric.equal_opportunity_difference()
-#
-#     return results
-#
-# def fair_check(metric,objective,threshold):
-#     if objective == 0:
-#         if metric >= 0:
-#             return  metric  <= (1 - threshold )
-#         else:
-#             return metric  >= (-1 + threshold )
-#     else:
-#         return ( (threshold <= metric) and (metric <= (2 - threshold)) )
 
 def get_data(the_metrics, the_b_metrics, fairness_metrics, attributes, atts_values, threshold, dataset):
     # na prosthesw threshold

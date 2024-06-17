@@ -122,7 +122,7 @@
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="upload_div" role="tabpanel" aria-labelledby="upload-tab">
                 <br>
-                <form id="upload-form" class="form-inline" method="POST" enctype="multipart/form-data"
+                <form id="upload-form" class="form-inline" enctype="multipart/form-data"
                       style="margin-left: -5px;">
                     <div class="form-group mb-2">
                         <input type="file" class="form-control-file btn-sm" name="file" id="file"
@@ -132,7 +132,7 @@
                             style="padding: 0.3rem 0.6rem; font-size: 0.9rem;" type="button" disabled>Upload
                     </button>
                 </form>
-                <div  style="margin-left: 5px;" id="msg"></div>
+                <div style="margin-left: 5px;" id="msg"></div>
                 <p style="margin-top: 0.5rem; margin-left: 5px; font-family: 'Roboto Slab', serif; font-size: 1.1rem; font-style: italic;">
                     Note: Please rename your prediction column to <strong>'outcome'</strong> for the app to recognize
                     it.
@@ -151,7 +151,7 @@
                         <tbody>
                         <tr id="logistic_regression">
                             <td>
-                                <input name="model" type="checkbox" value="logistic_regression" checked>
+                                <input name="model" type="radio" value="logistic_regression" checked>
                                 Logistic Regression
                             </td>
                             <td>Logistic regression is a statistical method for predicting binary outcomes from data.
@@ -159,7 +159,7 @@
                         </tr>
                         <tr id="naive_bayes">
                             <td>
-                                <input name="model" type="checkbox" value="naive_bayes">
+                                <input name="model" type="radio" value="naive_bayes">
                                 Naive Bayes
                             </td>
                             <td>Naive Bayes is a simple technique for constructing classifiers: models that assign class
@@ -168,7 +168,7 @@
                         </tr>
                         <tr id="random_forest">
                             <td>
-                                <input name="model" type="checkbox" value="random_forest">
+                                <input name="model" type="radio" value="random_forest">
                                 Random Forest
                             </td>
                             <td>Random Forest is an ensemble learning method for classification that operates by
@@ -178,7 +178,7 @@
 
                         <tr id="svm">
                             <td>
-                                <input name="model" type="checkbox" value="svm">
+                                <input name="model" type="radio" value="svm">
                                 SVM
                             </td>
                             <td>Support Vector Machine (SVM) is a supervised machine learning algorithm which can be
@@ -188,8 +188,7 @@
                         </tbody>
                     </table>
                     <div class="next-step-container">
-                        <button id="next-step" class="btn btn-primary btn-sm mt-2" type="submit" disabled>Next Step
-                        </button>
+                        <button id="next-step" class="btn btn-primary btn-sm mt-2" type="submit">Next Step</button>
                     </div>
                 </form>
             </div>
@@ -241,31 +240,7 @@
                     }
                 });
             });
+
         });
-
-        function submitModelForm() {
-            var selectedModels = [];
-            $('input[name="model"]:checked').each(function () {
-                selectedModels.push(this.value);
-            });
-            var form_data = new FormData();
-            form_data.append('selected_models', JSON.stringify(selectedModels));
-
-            $.ajax({
-                url: '/Choose_att',
-                dataType: 'json',
-                cache: false,
-                contentType: false,
-                processData: false,
-                data: form_data,
-                type: 'post',
-                success: function (response) {
-                    window.location.href = "/Choose_att"; // Redirect to the Choose_att page
-                },
-                error: function (response) {
-                    console.error('Error:', response);
-                }
-            });
-        }
     </script>
 {% endblock %}

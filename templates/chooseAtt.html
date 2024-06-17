@@ -3,9 +3,10 @@
 {% block head %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 <style>
+
   .jumbotron {
     text-align: center;
-    background-color: #f8f9fa;
+    background-color:  #e9ecef;
     padding: 2rem 1rem;
     border: 1px solid #e3e3e3;
     border-radius: 0.3rem;
@@ -106,7 +107,7 @@
   <br>
   <form id="attributeForm" action="/metric" method="POST">
     {% for attribute in data %}
-    {% if not ('Score' == attribute.name or 'Label_value' == attribute.name) %}
+    {% if not ('outcome' == attribute.name or 'Outcome' == attribute.name) %}
     <div class="attribute-row" id="row_{{ attribute.name }}">
       <div class="custom-control custom-checkbox col-auto" style="flex: 0 0 170px;">
         <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">

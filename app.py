@@ -54,41 +54,45 @@ def upload():
 @app.route('/Choose_att', defaults={'dataset': None}, methods=['GET', 'POST'])
 @app.route('/Choose_att/<dataset>', methods=['GET', 'POST'])
 def Choose_att(dataset):
-    selected_model = request.form.get('selected_models')
+    if request.method == 'POST':
+        selected_models = request.form.get('model')  # Update the form field name to 'model'
+        if selected_models:
+            selected_models = selected_models.strip('[]').strip('"')
+            app.config['SELECTED_MODEL'] = selected_models
 
-    app.config['SELECTED_MODEL'] = selected_model
+    data = att_values.dataset_parse(app.config.get("UPLOADED_FILE"))
+    return render_template("chooseAtt.html", data=data)
 
-    return render_template("chooseAtt.html", data=att_values.dataset_parse(app.config["UPLOADED_FILE"]))
-    # if not dataset:
-    #     if request.method == 'POST' and request.files['file']:
-    #
-    #
-    #         return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
-    # else:
-    #     data = []
-    #     app.config["DATASET"] = dataset
-    #     if dataset == "Adult":
-    #         obj = AttsnValues("sex")
-    #         obj.addValue(" Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-    #         obj1 = AttsnValues("race")
-    #         obj1.addValue(
-    #             "White is considered privileged (value = 1) and Non-white is considered unprivileged (value = 0)")
-    #     elif dataset == "German":
-    #         obj = AttsnValues("sex")
-    #         obj.addValue("Male is  considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-    #         obj1 = AttsnValues("age")
-    #         obj1.addValue(
-    #             " age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)")
-    #     else:
-    #         obj = AttsnValues("sex")
-    #         obj.addValue("Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)")
-    #         obj1 = AttsnValues("race")
-    #         obj1.addValue(
-    #             "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)")
-    #     data.append(obj)
-    #     data.append(obj1)
-    #     return render_template("chooseAtt.html", data=data, dataset=dataset)
-    #     # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
+# if not dataset:
+#     if request.method == 'POST' and request.files['file']:
+#
+#
+#         return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
+# else:
+#     data = []
+#     app.config["DATASET"] = dataset
+#     if dataset == "Adult":
+#         obj = AttsnValues("sex")
+#         obj.addValue(" Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
+#         obj1 = AttsnValues("race")
+#         obj1.addValue(
+#             "White is considered privileged (value = 1) and Non-white is considered unprivileged (value = 0)")
+#     elif dataset == "German":
+#         obj = AttsnValues("sex")
+#         obj.addValue("Male is  considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
+#         obj1 = AttsnValues("age")
+#         obj1.addValue(
+#             " age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)")
+#     else:
+#         obj = AttsnValues("sex")
+#         obj.addValue("Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)")
+#         obj1 = AttsnValues("race")
+#         obj1.addValue(
+#             "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)")
+#     data.append(obj)
+#     data.append(obj1)
+#     return render_template("chooseAtt.html", data=data, dataset=dataset)
+#     # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
 
 
 @app.route('/metric', methods=['GET', 'POST'])
@@ -98,6 +102,8 @@ def metric():
 
     return render_template("metric.html", metrics=constants.fairness_metrics,
                            description=constants.fairness_metrics_descr)
+
+
 @app.route('/fairness_report', methods=['GET', 'POST'])
 def fairness_report():
     if app.config["DATASET"] == "upload":
@@ -107,8 +113,11 @@ def fairness_report():
         app.config['Threshold'] = threshold
         app.config['Metrics'] = metrics
 
-        data = prcs.get_fairness_metrics(app.config["atts_n_values_picked"], path_to_csv=app.config["UPLOADED_FILE"],
-                                         metrics_to_calculate=app.config['Metrics'], threshold=app.config['Threshold'])
+        model_metrics, data = prcs.train_and_evaluate(atts_n_vals_picked=app.config["atts_n_values_picked"],
+                                                      path_to_csv=app.config["UPLOADED_FILE"],
+                                                      metrics_to_calculate=app.config['Metrics'],
+                                                      threshold=app.config['Threshold'],
+                                                      model_name=app.config["SELECTED_MODEL"])
     else:
         the_b_metrics, truth, the_metrics, datasets, app.config["privileged_groups"], app.config["unprivileged_groups"], \
             app.config["the_b_datasets"], app.config["train_datasets"], app.config["test_datasets"], app.config[
@@ -119,7 +128,8 @@ def fairness_report():
 
     app.config["DATA"] = data
 
-    return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'])
+    return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'],
+                           model_metrics=model_metrics)
 
 
 @app.route('/algorithms', methods=['GET', 'POST'])
@@ -134,7 +144,6 @@ def algorithms():
 
 @app.route('/mitigation_report', methods=['GET', 'POST'])
 def mitigation_report():
-
     if app.config["DATASET"] == "upload":
 
         app.config['Algorithms'] = request.form.getlist('algorithms')
@@ -153,6 +162,7 @@ def mitigation_report():
     return render_template("mitigation_report.html", data=unbiased_data, threshold=app.config['Threshold'],
                            ideal=fairness_metrics_ideal, biased_details=app.config["b_details"],
                            unbiased_details=app.config["ub_details"])
+
 
 if __name__ == "__main__":
     app.run(debug=True)
