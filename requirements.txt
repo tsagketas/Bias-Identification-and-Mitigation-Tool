@@ -7,3 +7,4 @@ tensorflow==2.8.0
 aif360[inFairness,LawSchoolGPA,Reductions]
 h5py==2.10.0
 seaborn
+BlackBoxAuditing
