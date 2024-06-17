@@ -241,9 +241,9 @@ def fair_check(metric_value, metric_name, threshold):
         return False
 
     if ideal_value == 1:
-        return metric_value >= (threshold / 100)
+        return metric_value >= (threshold / 100) and metric_value <= (2-(threshold / 100))
     elif ideal_value == 0:
-        return metric_value <= (threshold / 100)
+        return metric_value <= (1-(threshold / 100)) and metric_value >= (-1+(threshold / 100))
     else:
         return False
 

@@ -107,7 +107,7 @@
   <br>
   <form id="attributeForm" action="/metric" method="POST">
     {% for attribute in data %}
-    {% if not ('outcome' == attribute.name or 'Outcome' == attribute.name) %}
+    {% if not ('OUTCOME' == attribute.name | upper) %}
     <div class="attribute-row" id="row_{{ attribute.name }}">
       <div class="custom-control custom-checkbox col-auto" style="flex: 0 0 170px;">
         <input type="checkbox" name="attribute" value="{{ attribute.name }}" class="custom-control-input" id="{{ attribute.name }}">
@@ -149,7 +149,7 @@
 
         var options = '<option value="">Select Attribute</option>';
         {% for attr in data %}
-        if (selectedAttributes.indexOf('{{ attr.name }}') === -1 && '{{ attr.name }}' !== 'Score' && '{{ attr.name }}' !== 'Label_value') {
+        if (selectedAttributes.indexOf('{{ attr.name }}') === -1 && '{{ attr.name | upper }}' !== 'OUTCOME') {
             options += '<option value="{{ attr.name }}">{{ attr.name }}</option>';
         }
         {% endfor %}
@@ -174,7 +174,7 @@
               <select name="intersection_attribute_${attribute}" class="form-control" style="flex: 0 0 170px;">
                 <option value="">Select Attribute</option>
                 {% for attr in data %}
-                {% if attr.name != '${existingAttrName}' and attr.name != 'Score' and attr.name != 'Label_value' %}
+                {% if attr.name != '${existingAttrName}' and (attr.name | upper) != 'SCORE'%}
                 <option value="{{ attr.name }}">{{ attr.name }}</option>
                 {% endif %}
                 {% endfor %}
@@ -204,7 +204,7 @@
 
             if (selectedAttr) {
                 {% for attr in data %}
-                if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}' && selectedAttr !== 'Score' && selectedAttr !== 'Label_value') {
+                if (selectedAttr === "{{ attr.name }}" && selectedAttr !== '${existingAttrName}' && (selectedAttr.toUpperCase()) !== 'OUTCOME') {
                     {% for val in attr.values %}
                     privilegedSelect.append('<option value="{{ val }}">{{ val }}</option>');
                     if ("{{ val }}" !== '${existingPrivilegedValue}') {

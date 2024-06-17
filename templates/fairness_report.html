@@ -71,9 +71,9 @@
         }
 
         .metric-table {
-            margin: auto;
-            border-radius: 0.5rem;
-            overflow: hidden;
+            width: 80%;
+            margin-bottom: 20px;
+            text-align: left; /* Ensures left alignment of the text */
         }
 
         .metric-table th, .metric-table td {
@@ -117,7 +117,7 @@
 
     <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-10">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header text-center" style="background-color: #f8f9fa;">
                         <h4 style="color: #6c757d;">Model Metrics</h4>
@@ -156,9 +156,10 @@
                         <table class="table table-bordered">
                             <thead>
                             <tr>
-                                <th colspan="{{ metric_data|length + 1 }}">
-                                    <div class="table-title">{{ metric.replace('_', ' ').title() }}</div>
-                                    <div class="table-subtitle">The ideal value of this metric
+                                <th colspan="{{ metric_data|length + 1 }}" class="text-center"
+                                    style="background-color: #f8f9fa;">
+                                    <h4 style="color: #6c757d;">{{ metric.replace('_', ' ').title() }}</h4>
+                                    <div class="table-subtitle" style="color: #6c757d;">The ideal value of this metric
                                         is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
                                 </th>
                             </tr>
@@ -227,8 +228,8 @@
                     var lowerBound, upperBound;
 
                     if (idealValue === 0) {
-                        lowerBound = -2 * threshold;
-                        upperBound = 2 * threshold;
+                        lowerBound = -(1 - threshold);
+                        upperBound = 1 - threshold;
                     } else {
                         lowerBound = idealValue * threshold;
                         upperBound = idealValue / threshold;
@@ -236,6 +237,7 @@
 
                     var labels = [];
                     var values = [];
+
 
                     {% for el in metric_data %}
                         var unprivilegedGroupLabel = '{{ el['Unprivileged_Group'] }}';

@@ -232,6 +232,13 @@
                         $('#msg').html('');
                         $('#msg').append(response.message + '<br/>');
                         if (response.success) {
+                            $('#model_div').addClass('active').removeClass('fade');
+                            $('#upload_div').removeClass('active').addClass('fade');
+
+                            $('#model-tab').addClass('active').attr('aria-selected', 'true');
+                            $('#upload-tab').removeClass('active').attr('aria-selected', 'false');
+
+                            $('#model-tab').tab('show');
                             $('#next-step').prop('disabled', false);
                         }
                     },
