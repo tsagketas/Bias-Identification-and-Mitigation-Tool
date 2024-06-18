@@ -127,6 +127,7 @@ def fairness_report():
                                    app.config["DATASET"])
 
     app.config["DATA"] = data
+    app.config["MODEL_DATA"] = model_metrics
 
     return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'],
                            model_metrics=model_metrics)
@@ -148,8 +149,20 @@ def mitigation_report():
 
         app.config['Algorithms'] = request.form.getlist('algorithms')
 
-        unbiased_data, app.config["ub_details"] = prcs.mitigation_all(app.config["DATA"], app.config["Label_data"],
-                                                                      app.config["Score_data"], algorithms_picked)
+        print("UPLOADED_FILE:", app.config['UPLOADED_FILE'])
+        print("SELECTED_MODEL:", app.config['SELECTED_MODEL'])
+        print("atts_n_values_picked:", app.config['atts_n_values_picked'])
+        print("Algorithms:", app.config['Algorithms'])
+        print("DATA:", app.config['DATA'])
+        print("DATA:", app.config['DATA'])
+
+        model_metrics, data = prcs.get_mitigated_results(
+            app.config['UPLOADED_FILE'],
+            app.config['SELECTED_MODEL'],
+            app.config['atts_n_values_picked'],
+            app.config['Algorithms'],
+            app.config['DATA'],
+        )
     else:
         unbiased_data, app.config["ub_details"] = expls.mitigation_examples(app.config["DATA"], algorithms_picked,
                                                                             app.config["Datasets"],
@@ -159,9 +172,8 @@ def mitigation_report():
                                                                             app.config["train_datasets"],
                                                                             app.config["test_datasets"])
 
-    return render_template("mitigation_report.html", data=unbiased_data, threshold=app.config['Threshold'],
-                           ideal=fairness_metrics_ideal, biased_details=app.config["b_details"],
-                           unbiased_details=app.config["ub_details"])
+    return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'],
+                           model_metrics=model_metrics)
 
 
 if __name__ == "__main__":

@@ -98,26 +98,40 @@ def calculate_model_metrics(model, X_test, y_test):
 
 
 # Function to convert to BinaryLabelDataset
-def convert_to_binary_label_dataset(X, y, label_encoders, label_name='label'):
+def convert_to_binary_label_dataset(X, y, protected_attributes, label_name='label'):
     df = X.copy()
     df[label_name] = y
-    return BinaryLabelDataset(df=df, label_names=[label_name], protected_attribute_names=list(label_encoders.keys()))
+
+    # Remove duplicates
+    return BinaryLabelDataset(df=df, label_names=[label_name],
+                              protected_attribute_names=list(set(protected_attributes)))
+
+
+def get_binary_datasets(X, y_true, y_pred, protected_attributes):
+    ground_truth_dataset = convert_to_binary_label_dataset(X, y_true, protected_attributes,
+                                                           label_name='true_label')
+    predicted_dataset = ground_truth_dataset.copy()
+    predicted_dataset.labels = y_pred.reshape(-1, 1)
+
+    return ground_truth_dataset, predicted_dataset
 
 
 # Function to calculate fairness metrics
 def calculate_fairness_metrics(X, y_true, y_pred, label_encoders, atts_n_vals_picked, metrics_to_calculate, threshold):
     results = []
-    ground_truth_dataset = convert_to_binary_label_dataset(X, y_true, label_encoders, label_name='true_label')
-    predicted_dataset = ground_truth_dataset.copy()
-    predicted_dataset.labels = y_pred.reshape(-1, 1)
 
     for att in atts_n_vals_picked:
+        protected_attributes = []
+        protected_attributes.append(att['attribute'])
         if 'intersection' in att and att['intersection']:
             for intersection_att in att['intersection']:
+                protected_attributes.append(intersection_att['attribute'])
+                ground_truth_dataset, predicted_dataset = get_binary_datasets(X, y_true, y_pred, protected_attributes)
                 results.extend(
                     calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset,
                                                      label_encoders, metrics_to_calculate, threshold))
         else:
+            ground_truth_dataset, predicted_dataset = get_binary_datasets(X, y_true, y_pred, protected_attributes)
             results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,
                                                       metrics_to_calculate, threshold))
 
@@ -227,9 +241,9 @@ def fair_check(metric_value, metric_name, threshold):
         return False
 
     if ideal_value == 1:
-        return metric_value >= (threshold / 100) and metric_value <= (2-(threshold / 100))
+        return metric_value >= (threshold / 100) and metric_value <= (2 - (threshold / 100))
     elif ideal_value == 0:
-        return metric_value <= (1-(threshold / 100)) and metric_value >= (-1+(threshold / 100))
+        return metric_value <= (1 - (threshold / 100)) and metric_value >= (-1 + (threshold / 100))
     else:
         return False
 
@@ -253,12 +267,12 @@ def train_and_evaluate(path_to_csv, model_name, atts_n_vals_picked, metrics_to_c
 
     return model_metrics, fairness_metrics
 
-def get_mitigated_results(path_to_csv,model_name,atts_n_vals_picked,algorithms,biased_data,biased_model_data):
-    foreach(algorithms)
-    #the algorithms is an array create a foreach loop and exec exec the mitigate function ( you create it )
-    #Depending of the algorithm picked execute the mitigation correctly
-    #Create a reponse like the train_and_evaluate function but in the model_metrics will contain the biased_data and the mitigated value of each metric and the same for the model_data take a look at the construct_metric_info
-    #use as many already created functions
-    #create as many function as you like
-    return
 
+def get_mitigated_results(path_to_csv, model_name, atts_n_vals_picked, algorithms, biased_data, biased_model_data):
+    foreach(algorithms)
+    # the algorithms is an array create a foreach loop and exec exec the mitigate function ( you create it )
+    # Depending of the algorithm picked execute the mitigation correctly
+    # Create a reponse like the train_and_evaluate function but in the model_metrics will contain the biased_data and the mitigated value of each metric and the same for the model_data take a look at the construct_metric_info
+    # use as many already created functions
+    # create as many function as you like
+    return
