@@ -1,248 +1,367 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        .jumbotron {
+            text-align: center;
+            background-color: #e9ecef;
+            padding: 2rem 1rem;
+            border: 1px solid #e3e3e3;
+            border-radius: 0.3rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .container {
+            margin-top: 2rem;
+        }
+
+        .steps {
+            display: flex;
+            margin-bottom: 2rem;
+            min-height: 300px;
+        }
+
+        .col-md-6 {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rounded {
+            border-radius: 0.3rem;
+        }
+
+        .list-group-item {
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+        .table-container {
+            margin-top: 2rem;
+        }
+
+        .metric-table {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .metric-table th, .metric-table td {
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
+            color: #343a40;
+        }
+
+        .metric-table th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .metric-table td {
+            background-color: #f8f9fa;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 100%;
+            width: 100%;
+        }
+
+        .card-algorithm {
+            margin-bottom: 2rem;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .card-algorithm-header {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .card-algorithm-body {
+            padding: 1rem;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="jumbotron" style="text-align: center; background-color: white;">
-  <h1 class="display-4">Mitigation Report</h1>
-  <p class="lead">The mitigation report is presented below. You can see the bias mitigation compared to the bias previous value.</p>
-  <hr class="my-4">
-  <img class="image" src="{{url_for('static', filename='chain_6.png')}}">
-  <br>
-  <p></p>
-  <br>
-</div>
-{% for element in data %}{{loop.index}}
-<div>
-  
-  <br>
-  <br>
-  <div class="container">
-    {% for el in element['Data'] %}
-    <div class="row steps">
-      <h4><p></p>Application of <b><i>{{element['Method']|tojson}} </i></b> algorithm</p></h4>
-      <div class="col-8">
-    <table class="table table-striped ">
-      <thead>
-        <tr>
-          <h3 style="font-family:sans-serif bold">{{el['Metric']|tojson}} </h1>
-            {%if el['Metric']=='disparate_impact' %}
-              <p>The ideal value of this metric is 1.0</p>
-            {% else %}
-              <p>The ideal value of this metric is 0.0</p>
-            {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <script type="text/javascript"
-            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
-          <script type="text/javascript"
-            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
-          <canvas id={{el['ID']|tojson}}  class="rounded float-right"></canvas>
-          <script>
-            
-            var thrsh = {{ threshold| tojson}} / 100;
-            var metrics= ["disparate_impact"];
-            var given_metric={{ el['Metric']| tojson }};
+    <div class="jumbotron">
+        <h1 class="display-4">Mitigation Report</h1>
+        <p class="lead">The mitigation report is presented below. You can see the bias mitigation compared to the bias
+            previous value.</p>
+        <hr class="my-4">
+        <img class="image" src="{{ url_for('static', filename='chain_6.png') }}">
+    </div>
 
-          if(metrics.includes(given_metric)){
-            ymin= thrsh;
-            ymax= 2-thrsh;
-          }else{
-            ymin=1-thrsh;
-            ymax=-1+thrsh;
-            
-          }
-            uniqueid={{ loop.index }};
-            labels = {{ el['Atts_to_show'] | tojson | safe }}
-            values = {{ el['Values'] | tojson }}
-            b_values = {{ el['Biased_values'] |tojson }}
-            
-            var ctx = document.getElementById({{ el['ID']| tojson }});
-            var myChart = new Chart(ctx, {
-              type: 'bar',
-              data: {
-                labels: labels,
-                datasets: [{
-                  label: "Debiased",
-              data: values,
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-            },{
-                  label: "Biased Value",
-              data: b_values,
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-            }]
-              },
-            options: {
-              scales: {
-                yAxes: [{
-                  id: uniqueid
-                }]
-              },
-              legend: {
-                display: false
-              },
-              annotation: {
-                annotations: [{
-                  id: 'box1',
-                  type: 'box',
-                  yScaleID: uniqueid,
-                  yMin: ymin,
-                  yMax: ymax,
-                  label:'fair zone',
-                  backgroundColor: 'rgba(100, 100, 100, 0.2)',
-                  borderColor: 'rgba(100, 100, 100, 0.2)',
-                }]
-              }
-            }
-            });
+    <div class="container mt-4">
+        {% for algorithm, algorithm_data in data.items() %}
+            <div class="card card-algorithm">
+                <div class="card-algorithm-header">
+                    <h2>{{ algorithm }}</h2>
+                </div>
+                <div class="card-algorithm-body">
+                    <div class="row justify-content-center">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header text-center" style="background-color: #f8f9fa;">
+                                    <h4 style="color: #6c757d;">Model Metrics</h4>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm table-bordered text-center">
+                                        <thead>
+                                        <tr>
+                                            <th>Model</th>
+                                            <th>Accuracy</th>
+                                            <th>F1 Score</th>
+                                            <th>Precision</th>
+                                            <th>Recall</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td>Unbiased Model</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['unbiased_model']['accuracy'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['unbiased_model']['f1_score'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['unbiased_model']['precision'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['unbiased_model']['recall'] | round(4) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Biased Model</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['biased_model']['accuracy'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['biased_model']['f1_score'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['biased_model']['precision'] | round(4) }}</td>
+                                            <td>{{ algorithm_data['Model_Metrics']['biased_model']['recall'] | round(4) }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-          </script>
-        </tr>
-      </tbody> 
-    </table>
-  </div>
-  <div class="col-2">
-    {% for el in unbiased_details%}
-      {%if el['Method'] == element['Method'] %}
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item"><b>Fair Model Performance </b></li>
-        <li class="list-group-item">Accuracy:{{  "%0.2f"|format(el["Accuracy"]) }}</li>
-        <li class="list-group-item">Precision:{{  "%0.2f"|format(el["Precision"]) }}</li>
-        <li class="list-group-item">Recall:{{  "%0.2f"|format(el["Recall"]) }}</li>
-        <li class="list-group-item">True negatives:{{ el["True negatives"] }}</li>
-        <li class="list-group-item">False positives:{{ el["False positives"] }}</li>
-        <li class="list-group-item">False negatives:{{ el["False negatives"] }}</li>
-        <li class="list-group-item">True positives:{{ el["True positives"] }}</li>
-      </ul>
-      {%endif%}
-    {%endfor%}
-  </div>
-  <div class="col-2">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item"><b>Biased Model Performance </b></li>
-      <li class="list-group-item">Accuracy:{{  "%0.2f"|format(biased_details[0]["Accuracy"]) }}</li>
-      <li class="list-group-item">Precision:{{ "%0.2f"|format(biased_details[0]["Precision"]) }}</li>
-      <li class="list-group-item">Recall:{{ "%0.2f"|format(biased_details[0]["Recall"]) }}</li>
-      <li class="list-group-item">True negatives:{{ biased_details[0]["True negatives"] }}</li>
-      <li class="list-group-item">False positives:{{ biased_details[0]["False positives"] }}</li>
-      <li class="list-group-item">False negatives:{{ biased_details[0]["False negatives"]}}</li>
-      <li class="list-group-item">True positives:{{ biased_details[0]["True positives"] }}</li>
-    </ul>
-  </div>
-</div>
-    <br>
-    <br>
-    {%endfor%}
-  </div>
-</div>
-{%endfor%}
+                    <div class="container table-container">
+                        {% for metric, metric_data in algorithm_data['Fairness_Metrics'].items() %}
+                            <div class="row steps">
+                                <div class="col-md-6">
+                                    <div class="metric-table">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                            <tr>
+                                                <th colspan="{{ metric_data|length + 1 }}" class="text-center"
+                                                    style="background-color: #f8f9fa;">
+                                                    <h4 style="color: #6c757d;">{{ metric.replace('_', ' ').title() }}</h4>
+                                                    <div class="table-subtitle" style="color: #6c757d;">The ideal value
+                                                        of this metric
+                                                        is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
+                                                </th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td>Protected Attributes</td>
+                                                {% for el in metric_data %}
+                                                    <td>{{ el['Protected_Attributes'] | join(', ') }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr>
+                                                <td>Privileged Group</td>
+                                                {% for el in metric_data %}
+                                                    <td>{{ el['Privileged_Group'] }}
+                                                        {% for attr in el['Intersectional_Attributes'] %}
+                                                            {{ attr['privileged'] }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr>
+                                                <td>Unprivileged Group</td>
+                                                {% for el in metric_data %}
+                                                    <td>{{ el['Unprivileged_Group'] }}
+                                                        {% for attr in el['Intersectional_Attributes'] %}
+                                                            {{ attr['unprivileged'] }}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr>
+                                                <td>Unbiased Values</td>
+                                                {% for el in metric_data %}
+                                                    <td>{{ '%.4f' | format(el['unbiased_Values']) }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr>
+                                                <td>Biased Values</td>
+                                                {% for el in metric_data %}
+                                                    <td>{{ '%.4f' | format(el['biased_Values']) }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="chart-{{ algorithm | replace(' ', '_') }}-{{ metric | replace(' ', '_') }}-{{ loop.index }}"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <br>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const threshold = {{ threshold | tojson }} / 100;
 
+            {% for algorithm, algorithm_data in data.items() %}
+                {% for metric, metric_data in algorithm_data['Fairness_Metrics'].items() %}
+                    (function () {
+                        var ctx = document.getElementById('chart-{{ algorithm | replace(' ', '_') }}-{{ metric | replace(' ', '_') }}-{{ loop.index }}').getContext('2d');
+                        var idealValue = {{ metric_data[0]['Ideal_Fairness_Value'] | tojson }};
+                        var lowerBound, upperBound;
+
+                        if (idealValue === 0) {
+                            lowerBound = -(1 - threshold);
+                            upperBound = 1 - threshold;
+                        } else {
+                            lowerBound = idealValue * threshold;
+                            upperBound = idealValue / threshold;
+                        }
+
+                        var labels = [];
+                        var unbiasedValues = [];
+                        var biasedValues = [];
+
+                        {% for el in metric_data %}
+                            var unprivilegedGroupLabel = '{{ el['Unprivileged_Group'] }}';
+                            {% for intersection in el['Intersectional_Attributes'] %}
+                                unprivilegedGroupLabel += ' {{ intersection['unprivileged'] }}';
+                            {% endfor %}
+                            unprivilegedGroupLabel = unprivilegedGroupLabel.trim();
+
+                            labels.push(unprivilegedGroupLabel);
+                            unbiasedValues.push({{ '%.4f' | format(el['unbiased_Values']) }});
+                            biasedValues.push({{ '%.4f' | format(el['biased_Values']) }});
+                        {% endfor %}
+
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        label: 'Unbiased Values',
+                                        data: unbiasedValues,
+                                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        borderWidth: 1
+                                    },
+                                    {
+                                        label: 'Biased Values',
+                                        data: biasedValues,
+                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                        borderColor: 'rgba(255, 99, 132, 1)',
+                                        borderWidth: 1
+                                    }
+                                ]
+                            },
+                            options: {
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true,
+                                            suggestedMax: 2
+                                        },
+                                        gridLines: {
+                                            color: "rgba(0, 0, 0, 0.1)"
+                                        }
+                                    }],
+                                    xAxes: [{
+                                        ticks: {
+                                            maxRotation: 0,
+                                            minRotation: 0,
+                                            callback: function (value) {
+                                                return value.split(" ");
+                                            }
+                                        },
+                                        gridLines: {
+                                            display: false
+                                        },
+                                        barPercentage: 0.5,
+                                        categoryPercentage: 0.5
+                                    }]
+                                },
+                                tooltips: {
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += tooltipItem.yLabel;
+                                            var group = data.labels[tooltipItem.index];
+                                            label += ' (Group: ' + group + ')';
+                                            return label;
+                                        }
+                                    }
+                                },
+                                annotation: {
+                                    annotations: [
+                                        {
+                                            type: 'line',
+                                            mode: 'horizontal',
+                                            scaleID: 'y-axis-0',
+                                            value: idealValue,
+                                            borderColor: 'black',
+                                            borderWidth: 1,
+                                        },
+                                        {
+                                            type: 'box',
+                                            yScaleID: 'y-axis-0',
+                                            yMin: lowerBound,
+                                            yMax: upperBound,
+                                            backgroundColor: 'rgba(144, 238, 144, 0.2)',
+                                            borderColor: 'rgba(144, 238, 144, 0.5)',
+                                            borderWidth: 1,
+                                            label: {
+                                                enabled: true,
+                                                content: 'Fairness Area',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                                fontColor: 'white',
+                                                fontSize: 8
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        });
+                    })();
+                {% endfor %}
+            {% endfor %}
+        });
+    </script>
 {% endblock %}

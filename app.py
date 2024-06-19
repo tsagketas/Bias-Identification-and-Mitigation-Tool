@@ -145,35 +145,17 @@ def algorithms():
 
 @app.route('/mitigation_report', methods=['GET', 'POST'])
 def mitigation_report():
-    if app.config["DATASET"] == "upload":
+    app.config['Algorithms'] = request.form.getlist('algorithms')
 
-        app.config['Algorithms'] = request.form.getlist('algorithms')
+    data = prcs.get_mitigated_results(app.config['UPLOADED_FILE'],
+                                      app.config['SELECTED_MODEL'],
+                                      app.config['atts_n_values_picked'],
+                                      app.config['Algorithms'],
+                                      app.config['DATA'],
+                                      app.config['MODEL_DATA'],
+                                      app.config['Threshold'])
 
-        print("UPLOADED_FILE:", app.config['UPLOADED_FILE'])
-        print("SELECTED_MODEL:", app.config['SELECTED_MODEL'])
-        print("atts_n_values_picked:", app.config['atts_n_values_picked'])
-        print("Algorithms:", app.config['Algorithms'])
-        print("DATA:", app.config['DATA'])
-        print("DATA:", app.config['DATA'])
-
-        model_metrics, data = prcs.get_mitigated_results(
-            app.config['UPLOADED_FILE'],
-            app.config['SELECTED_MODEL'],
-            app.config['atts_n_values_picked'],
-            app.config['Algorithms'],
-            app.config['DATA'],
-        )
-    else:
-        unbiased_data, app.config["ub_details"] = expls.mitigation_examples(app.config["DATA"], algorithms_picked,
-                                                                            app.config["Datasets"],
-                                                                            app.config["privileged_groups"],
-                                                                            app.config["unprivileged_groups"],
-                                                                            app.config["the_b_datasets"],
-                                                                            app.config["train_datasets"],
-                                                                            app.config["test_datasets"])
-
-    return render_template("fairness_report.html", data=data, threshold=app.config['Threshold'],
-                           model_metrics=model_metrics)
+    return render_template("mitigation_report.html", data=data, threshold=app.config['Threshold'])
 
 
 if __name__ == "__main__":
