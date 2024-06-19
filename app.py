@@ -100,8 +100,7 @@ def fairness_report():
                                                       threshold=app.config['Threshold'],
                                                       model_name=app.config["SELECTED_MODEL"])
     else:
-        model_metrics, data = expls.train_and_evaluate(dataset=pp.config["DATASET"],
-                                                       atts_n_vals_picked=app.config["atts_n_values_picked"],
+        model_metrics, data = expls.train_and_evaluate(dataset_name=app.config["DATASET"],
                                                        metrics_to_calculate=app.config['Metrics'])
 
     app.config["DATA"] = data

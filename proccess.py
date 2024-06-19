@@ -300,7 +300,7 @@ def mitigate(algorithm, path_to_csv, model_name, atts_n_vals_picked, threshold, 
         return disparate_impact_remover_result(path_to_csv, model_name, atts_n_vals_picked, threshold,
                                                metrics_to_calculate)
     elif algorithm == "Reweighing":
-        return reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate,threshold)
+        return reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold)
     elif algorithm == "Adversarial Debiasing":
         return adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold)
     elif algorithm == "Prejudice Remover":
@@ -403,7 +403,7 @@ def apply_reweighing_and_train_model(X, y, model_name, protected_attributes, att
     return model, X_test, y_test, y_pred, model_metrics
 
 
-def reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate,threshold):
+def reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold):
     X, y, label_encoders = prepare_data(path_to_csv)
     results = []
     model_metrics = {}
