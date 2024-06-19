@@ -27,3 +27,5 @@ Algorith Result Page:
 myenv\Scripts\activate
 source myenv/bin/activate
 pip install -r requirements.txt
+
+sto pr.py allaksa to np.float me np.float64 i float
