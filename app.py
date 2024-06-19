@@ -51,9 +51,8 @@ def upload():
     return jsonify({"success": False, "message": "No file uploaded."})
 
 
-@app.route('/Choose_att', defaults={'dataset': None}, methods=['GET', 'POST'])
-@app.route('/Choose_att/<dataset>', methods=['GET', 'POST'])
-def Choose_att(dataset):
+@app.route('/Choose_att', methods=['GET', 'POST'])
+def Choose_att():
     if request.method == 'POST':
         selected_models = request.form.get('model')  # Update the form field name to 'model'
         if selected_models:
@@ -63,45 +62,26 @@ def Choose_att(dataset):
     data = att_values.dataset_parse(app.config.get("UPLOADED_FILE"))
     return render_template("chooseAtt.html", data=data)
 
-# if not dataset:
-#     if request.method == 'POST' and request.files['file']:
-#
-#
-#         return render_template("chooseAtt.html", data= att_values.dataset_parse(app.config["UPLOADED_FILE"]))
-# else:
-#     data = []
-#     app.config["DATASET"] = dataset
-#     if dataset == "Adult":
-#         obj = AttsnValues("sex")
-#         obj.addValue(" Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-#         obj1 = AttsnValues("race")
-#         obj1.addValue(
-#             "White is considered privileged (value = 1) and Non-white is considered unprivileged (value = 0)")
-#     elif dataset == "German":
-#         obj = AttsnValues("sex")
-#         obj.addValue("Male is  considered privileged (value = 1) and Female is considered unprivileged (value = 0)")
-#         obj1 = AttsnValues("age")
-#         obj1.addValue(
-#             " age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)")
-#     else:
-#         obj = AttsnValues("sex")
-#         obj.addValue("Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)")
-#         obj1 = AttsnValues("race")
-#         obj1.addValue(
-#             "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)")
-#     data.append(obj)
-#     data.append(obj1)
-#     return render_template("chooseAtt.html", data=data, dataset=dataset)
-#     # return render_template("metric.html",metrics=fairness_example_metrics,description=fairness_example_metrics_descr,dataset=dataset)
 
+@app.route('/example/<dataset>', methods=['GET', 'POST'])
+def example(dataset):
+    app.config["DATASET"] = "example"
+    return render_template('example_att.html', data=expls.get_example_attributes(dataset))
 
 @app.route('/metric', methods=['GET', 'POST'])
 def metric():
     if request.method == "POST":
         app.config['atts_n_values_picked'] = request.get_json()
 
-    return render_template("metric.html", metrics=constants.fairness_metrics,
-                           description=constants.fairness_metrics_descr)
+    if app.config["DATASET"] == "upload":
+        metrics = constants.fairness_metrics
+        description = constants.fairness_metrics_descr
+    else:
+        metrics = constants.fairness_example_metrics
+        description = constants.fairness_example_metrics_descr
+
+    return render_template("metric.html", metrics=metrics,
+                           description=description)
 
 
 @app.route('/fairness_report', methods=['GET', 'POST'])

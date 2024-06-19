@@ -73,7 +73,7 @@
         <p class="lead">In this stage of the process you need to upload your dataset. You can always try our demo
             datasets to get a hang of the tool.</p>
         <hr class="my-4">
-        <img class="image" src="{{ url_for('static', filename='chain_1.png') }}">
+        <img class="image" src="{{ url_for('static', filename='Images//chain_1.png') }}">
     </div>
 
     <div class="form-container">
@@ -82,25 +82,25 @@
             <tbody>
             <tr>
                 <td>
-                    <a href="{{ url_for('Choose_att', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism
+                    <a href="{{ url_for('example', dataset='Compass') }}" style="color: #4283eb;">Compass Recidivism
                         Risk Assessment</a>
                 </td>
                 <td>Data contains variables used by the COMPAS algorithm in scoring defendants used by judges and parole
                     officers for scoring criminal defendant’s likelihood of reoffending (recidivism).
                 </td>
             </tr>
+{#            <tr>#}
+{#                <td>#}
+{#                    <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data#}
+{#                        Set</a>#}
+{#                </td>#}
+{#                <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income"#}
+{#                    dataset.#}
+{#                </td>#}
+{#            </tr>#}
             <tr>
                 <td>
-                    <a href="{{ url_for('Choose_att',dataset='Adult') }}" style="color: #4283eb;">Adult Income Data
-                        Set</a>
-                </td>
-                <td>Predict whether income exceeds $50K/yr based on census data. Also known as "Census Income"
-                    dataset.
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <a href="{{ url_for('Choose_att', dataset='German' ) }}" style="color: #4283eb;">German Credit Data
+                    <a href="{{ url_for('example', dataset='German' ) }}" style="color: #4283eb;">German Credit Data
                         Set</a>
                 </td>
                 <td>Data that classifies people described by a set of attributes as good or bad credit risks</td>
