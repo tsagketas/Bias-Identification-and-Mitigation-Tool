@@ -68,6 +68,7 @@ def example(dataset):
     app.config["DATASET"] = "example"
     return render_template('example_att.html', data=expls.get_example_attributes(dataset))
 
+
 @app.route('/metric', methods=['GET', 'POST'])
 def metric():
     if request.method == "POST":
@@ -86,12 +87,12 @@ def metric():
 
 @app.route('/fairness_report', methods=['GET', 'POST'])
 def fairness_report():
-    if app.config["DATASET"] == "upload":
+    metrics = request.form.getlist('metrics')
+    threshold = request.form['threshold']
+    app.config['Threshold'] = threshold
+    app.config['Metrics'] = metrics
 
-        metrics = request.form.getlist('metrics')
-        threshold = request.form['threshold']
-        app.config['Threshold'] = threshold
-        app.config['Metrics'] = metrics
+    if app.config["DATASET"] == "upload":
 
         model_metrics, data = prcs.train_and_evaluate(atts_n_vals_picked=app.config["atts_n_values_picked"],
                                                       path_to_csv=app.config["UPLOADED_FILE"],
@@ -99,12 +100,9 @@ def fairness_report():
                                                       threshold=app.config['Threshold'],
                                                       model_name=app.config["SELECTED_MODEL"])
     else:
-        the_b_metrics, truth, the_metrics, datasets, app.config["privileged_groups"], app.config["unprivileged_groups"], \
-            app.config["the_b_datasets"], app.config["train_datasets"], app.config["test_datasets"], app.config[
-            "b_details"] = expls.example(app.config["DATASET"], app.config["atts"])
-        app.config["Datasets"] = datasets
-        data, flag = prcs.get_data(the_metrics, the_b_metrics, metrics_picked, atts_picked, values_picked, 0,
-                                   app.config["DATASET"])
+        model_metrics, data = expls.train_and_evaluate(dataset=pp.config["DATASET"],
+                                                       atts_n_vals_picked=app.config["atts_n_values_picked"],
+                                                       metrics_to_calculate=app.config['Metrics'])
 
     app.config["DATA"] = data
     app.config["MODEL_DATA"] = model_metrics

@@ -28,6 +28,8 @@ import tensorflow.compat.v1 as tf
 
 from att_values import AttsnValues
 
+import proccess
+
 tf.disable_eager_execution()
 
 
@@ -38,24 +40,92 @@ def create_attsn_value(attribute, descriptions):
     return obj
 
 
+def get_groups(dataset_name):
+    groups = {
+        "german": (
+            [{'sex': 1}],  # Privileged: Male
+            [{'sex': 0}]  # Unprivileged: Female
+        ),
+        "compas": (
+            [{'race': 0}],  # Privileged: Caucasian
+            [{'race': 1}]  # Unprivileged: African-American
+        ),
+        "bank": (
+            [{'age': 0}],  # Privileged: 25 or older
+            [{'age': 1}]  # Unprivileged: Younger than 25
+        )
+    }
+
+    return groups.get(dataset_name, ([], []))
+
+
 def get_example_attributes(dataset):
     data = []
     if dataset == "German":
         data.append(create_attsn_value("sex", [
             "Male is considered privileged (value = 1) and Female is considered unprivileged (value = 0)"
         ]))
-        data.append(create_attsn_value("age", [
-            "age >= 25 is considered privileged (value = 1) and age < 25 is considered unprivileged (value = 0)"
-        ]))
-    else:
-        data.append(create_attsn_value("sex", [
-            "Female is considered privileged (value = 1) and Male is considered unprivileged (value = 0)"
-        ]))
+    elif dataset == "Compas":
         data.append(create_attsn_value("race", [
             "Caucasian is considered privileged (value = 1) and African-American is considered unprivileged (value = 0)"
         ]))
+    else:
+        data.append(create_attsn_value("age", [
+            "Age is considered as the protected attribute Individuals aged 25 or older are considered privileged (value = 0), while individuals younger than 25 are considered unprivileged (value = 1)"
+        ]))
 
     return data
+
+
+def get_data(dataset):
+    train, test = dataset.split([0.7], shuffle=True)
+
+    # Preprocess data
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(train.features)
+    y_train = train.labels.ravel()
+    X_test = scaler.transform(test.features)
+    y_test = test.labels.ravel()
+
+    lr = LogisticRegression(solver='liblinear')
+    lr.fit(X_train, y_train)
+    return lr, X_test, y_test
+
+
+def get_example_dataset(dataset_name: str):
+    datasets = {
+        "German": GermanDataset,
+        "Compas": CompasDataset,
+        "Bank": BankDataset  # Default to BankDataset for any other input
+    }
+
+    metrics, y_pred = proccess.calculate_model_metrics(lr, X_test, y_test)
+
+    return datasets.get(dataset_name, BankDataset)()
+
+
+def train_model(dataset):
+    train, test = dataset.split([0.7], shuffle=True)
+
+    # Preprocess data
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(train.features)
+    y_train = train.labels.ravel()
+    X_test = scaler.transform(test.features)
+    y_test = test.labels.ravel()
+
+    # Train logistic regression model
+    lr = LogisticRegression()
+    lr.fit(X_train, y_train)
+    y_pred = lr.predict(X_test)
+
+    return
+
+
+def train_and_evaluate(dataset, atts_n_vals_picked, metrics_to_calculate):
+    dataset = get_example_dataset(dataset)
+    print(atts_n_vals_picked, metrics_to_calculate)
+    return [], []
 
 
 def example(dataset, atts_picked):
