@@ -20,7 +20,8 @@ def dataset_parse(dataset):
         obj = AttsnValues(col)
         for value in data_to_read[col]:
             obj.add_value(value)
-        obj.values = sorted(obj.values)
+        # Convert all elements to strings before sorting
+        obj.values = sorted(obj.values, key=str)
         data_to_pass.append(obj)
 
     data_to_pass.sort(key=lambda x: x.name)
