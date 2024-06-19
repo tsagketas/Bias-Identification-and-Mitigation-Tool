@@ -53,10 +53,6 @@ def prepare_data(path_to_csv):
 # Function to encode numerical variables
 def process_numerical_variables(df):
     numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
-    for column in numerical_columns:
-        median = df[column].median()
-        df[column].fillna(median, inplace=True)
-
     scaler = StandardScaler()
     df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
     return df
@@ -305,13 +301,12 @@ def mitigate(algorithm, path_to_csv, model_name, atts_n_vals_picked, threshold, 
                                                metrics_to_calculate)
     elif algorithm == "Reweighing":
         return reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate)
-    # elif algorithm == "Adversarial Debiasing":
-    #     return adversarial_debiasing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate,
-    #                                         threshold)
+    elif algorithm == "Adversarial Debiasing":
+        return adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold)
     elif algorithm == "Prejudice Remover":
-        return prejudice_remover_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold)
-    # elif algorithm == "Calibrated Equality of Odds":
-    #     return calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold)
+        return prejudice_remover_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold)
+    elif algorithm == "Calibrated Equality of Odds":
+        return calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold)
     else:
         return [], []
 
@@ -382,7 +377,7 @@ def apply_reweighing_and_train_model(X, y, model_name, protected_attributes, att
     bld = convert_to_binary_label_dataset(X, y, protected_attributes)
 
     privildged_group, unprivildged_group = get_privildged_group(att, label_encoders, intersectional, intersection_att)
-    print(protected_attributes,privildged_group, unprivildged_group)
+
     RW = Reweighing(unprivileged_groups=unprivildged_group, privileged_groups=privildged_group)
 
     reweighted_data = RW.fit_transform(bld)
@@ -448,67 +443,30 @@ def reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_ca
     return results, model_metrics
 
 
-def adversarial_debiasing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold):
-    X, y, label_encoders = prepare_data(path_to_csv)
-    privileged_groups, unprivileged_groups = get_groups(atts_n_vals_picked, label_encoders)
-    dataset = convert_to_binary_label_dataset(X, y, label_encoders)
-    ad = AdversarialDebiasing(privileged_groups=privileged_groups, unprivileged_groups=unprivileged_groups,
-                              scope_name='debiasing', debias=True)
-    sess = tf.Session()
-    ad.fit(dataset, sess)
-    dataset_pred = ad.predict(dataset)
-    X_pred = pd.DataFrame(dataset_pred.features, columns=X.columns)
-    y_pred = pd.Series(dataset_pred.labels.ravel(), name='outcome')
-    model_metrics, y_pred_labels = calculate_model_metrics(ad, X_pred, y_pred)
-    fairness_metrics = calculate_fairness_metrics(X, y, y_pred_labels, label_encoders, atts_n_vals_picked,
-                                                  metrics_to_calculate, threshold)
-    return model_metrics, fairness_metrics
-
-
-def apply_prejudice_remover_and_train_model(X, y, model_name,protected_attributes, att, threshold):
+def apply_adversarial_debiasing_and_train_model(X, y, protected_attributes):
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-    # Convert the training data to a binary label dataset
-    train_df = pd.concat([X_train, y_train], axis=1)
-    bld_train = BinaryLabelDataset(df=train_df,
-                                   label_names=['outcome'],
-                                   protected_attribute_names=protected_attributes)
+    train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
+    test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
 
-    # Apply the PrejudiceRemover to the training data
-    pr = PrejudiceRemover(sensitive_attr=att['attribute'], eta=25)
-    pr.fit(bld_train)
+    pr = PrejudiceRemover(eta=25.0)
+    pr.fit(train_bld)
+    pred_bld = pr.predict(test_bld)
 
-    # Transform the test data to a binary label dataset
-    test_df = pd.concat([X_test, y_test], axis=1)
-    bld_test = BinaryLabelDataset(df=test_df,
-                                  label_names=['outcome'],
-                                  protected_attribute_names=protected_attributes)
+    y_pred = pred_bld.labels
 
-    # Apply the PrejudiceRemover to the test data
-    bld_test_repaired = pr.predict(bld_test)
-
-    # Extract the repaired labels and features
-    X_test_repaired = bld_test_repaired.features
-    y_test_repaired = bld_test_repaired.labels
-
-    # Ensure y_test_repaired is one-dimensional
-    if y_test_repaired.ndim > 1:
-        y_test_repaired = y_test_repaired.ravel()
-
-    # Calculate model metrics: accuracy, precision, recall, F1-score
     model_metrics = {
-        'accuracy': accuracy_score(y_test, y_test_repaired),
-        'precision': precision_score(y_test, y_test_repaired),
-        'recall': recall_score(y_test, y_test_repaired),
-        'f1_score': f1_score(y_test, y_test_repaired)
+        'accuracy': accuracy_score(y_test, y_pred),
+        'f1_score': f1_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred)
     }
 
-    return pr, X_test_repaired, y_test, y_test_repaired, model_metrics
+    return X_test, y_test, y_pred, model_metrics
 
 
-
-def prejudice_remover_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold):
+def adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold):
     X, y, label_encoders = prepare_data(path_to_csv)
     results = []
     model_metrics = {}
@@ -520,21 +478,20 @@ def prejudice_remover_result(path_to_csv, model_name, atts_n_vals_picked, metric
                 protected_attributes.append(intersection_att['attribute'])
                 # Apply Prejudice Remover and train model
 
-                model, X_test, y_test, y_pred, model_metrics = apply_prejudice_remover_and_train_model(
-                    X, y, model_name, protected_attributes, att, threshold)
+                X_test, y_test, y_pred, model_metrics = apply_adversarial_debiasing_and_train_model(X, y,
+                                                                                                    protected_attributes)
 
-                # Calculate intersectional metrics
                 ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred,
                                                                               protected_attributes)
+
                 results.extend(
                     calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset,
                                                      label_encoders, metrics_to_calculate, threshold))
         else:
             # Apply Prejudice Remover and train model
-            model, X_test, y_test, y_pred, model_metrics = apply_prejudice_remover_and_train_model(
-                X, y, model_name, protected_attributes, att, threshold)
+            X_test, y_test, y_pred, model_metrics = apply_adversarial_debiasing_and_train_model(X, y,
+                                                                                                protected_attributes)
 
-            # Calculate standard metrics
             ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred, protected_attributes)
             results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,
                                                       metrics_to_calculate, threshold))
@@ -542,21 +499,132 @@ def prejudice_remover_result(path_to_csv, model_name, atts_n_vals_picked, metric
     return results, model_metrics
 
 
+def apply_prejudice_remover_and_train_model(X, y, protected_attributes):
+    # Split the data into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
+    test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
+
+    pr = PrejudiceRemover(eta=25.0)
+    pr.fit(train_bld)
+    pred_bld = pr.predict(test_bld)
+
+    y_pred = pred_bld.labels
+
+    model_metrics = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'f1_score': f1_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred)
+    }
+
+    return X_test, y_test, y_pred, model_metrics
+
+
+def prejudice_remover_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold):
+    X, y, label_encoders = prepare_data(path_to_csv)
+    results = []
+    model_metrics = {}
+
+    for att in atts_n_vals_picked:
+        protected_attributes = [att['attribute']]
+        if 'intersection' in att and att['intersection']:
+            for intersection_att in att['intersection']:
+                protected_attributes.append(intersection_att['attribute'])
+                # Apply Prejudice Remover and train model
+
+                X_test, y_test, y_pred, model_metrics = apply_prejudice_remover_and_train_model(X, y,
+                                                                                                protected_attributes)
+
+                ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred,
+                                                                              protected_attributes)
+
+                results.extend(
+                    calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset,
+                                                     label_encoders, metrics_to_calculate, threshold))
+        else:
+            # Apply Prejudice Remover and train model
+            X_test, y_test, y_pred, model_metrics = apply_prejudice_remover_and_train_model(X, y, protected_attributes)
+
+            ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred, protected_attributes)
+            results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,
+                                                      metrics_to_calculate, threshold))
+
+    return results, model_metrics
+
+
+def apply_calibrated_eq_odds_and_train_model(X, y, model_name, protected_attributes, att, label_encoders,
+                                             intersectional=False,
+                                             intersection_att=[]):
+    # Split the data into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    privildged_group, unprivildged_group = get_privildged_group(att, label_encoders, intersectional,
+                                                                intersection_att)
+
+    # Train the model using the training data and weights
+    model = train_model(model_name, X_train, y_train)
+
+    # Calculate model metrics and predictions
+    model_metrics, y_pred = calculate_model_metrics(model, X_test, y_test)
+
+    test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
+
+    cpp = CalibratedEqOddsPostprocessing(unprivileged_groups=unprivildged_group,
+                                         privileged_groups=privildged_group,
+                                         cost_constraint="fnr",
+                                         seed=42)
+
+    pred_bld = test_bld.copy()
+    pred_bld.labels = y_pred
+
+    cpp = cpp.fit(test_bld, pred_bld)
+    pred_cpp = cpp.predict(pred_bld)
+
+    # Convert postprocessed predictions back to a pandas DataFrame
+    y_pred_cpp = pred_cpp.labels
+
+    return X_test, y_test, y_pred_cpp, model_metrics
+
+
 def calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold):
     X, y, label_encoders = prepare_data(path_to_csv)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    model = train_model(model_name, X_train, y_train)
-    model_metrics, y_pred = calculate_model_metrics(model, X_test, y_test)
-    privileged_groups, unprivileged_groups = get_groups(atts_n_vals_picked, label_encoders)
-    dataset_true = convert_to_binary_label_dataset(X_test, y_test, label_encoders)
-    dataset_pred = convert_to_binary_label_dataset(X_test, y_pred, label_encoders)
-    ceo = CalibratedEqOddsPostprocessing(privileged_groups=privileged_groups, unprivileged_groups=unprivileged_groups,
-                                         cost_constraint='fnr')
-    dataset_transf = ceo.fit_predict(dataset_true, dataset_pred)
-    y_transf_pred = pd.Series(dataset_transf.labels.ravel(), name='outcome')
-    fairness_metrics = calculate_fairness_metrics(X_test, y_test, y_transf_pred, label_encoders, atts_n_vals_picked,
-                                                  metrics_to_calculate, threshold)
-    return model_metrics, fairness_metrics
+    results = []
+    model_metrics = {}
+
+    for att in atts_n_vals_picked:
+        protected_attributes = [att['attribute']]
+        if 'intersection' in att and att['intersection']:
+            for intersection_att in att['intersection']:
+                protected_attributes.append(intersection_att['attribute'])
+                # Apply Prejudice Remover and train model
+
+                X_test, y_test, y_pred, model_metrics = apply_calibrated_eq_odds_and_train_model(X, y, model_name,
+                                                                                                 protected_attributes,
+                                                                                                 att,
+                                                                                                 label_encoders,
+                                                                                                 True,
+                                                                                                 intersection_att)
+
+                ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred,
+                                                                              protected_attributes)
+
+                results.extend(
+                    calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset, predicted_dataset,
+                                                     label_encoders, metrics_to_calculate, threshold))
+        else:
+            # Apply Prejudice Remover and train model
+            X_test, y_test, y_pred, model_metrics = apply_calibrated_eq_odds_and_train_model(X, y, model_name,
+                                                                                             protected_attributes,
+                                                                                             att,
+                                                                                             label_encoders)
+
+            ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred, protected_attributes)
+            results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,
+                                                      metrics_to_calculate, threshold))
+
+    return results, model_metrics
 
 
 def get_mitigated_results(path_to_csv, model_name, atts_n_vals_picked, algorithms, biased_data, biased_model_data,
@@ -673,8 +741,7 @@ atts_n_vals_picked = [{'attribute': 'gender', 'privileged': 'Male', 'unprivilege
                        'intersection': [{'attribute': 'gender', 'privileged': 'Male', 'unprivileged': 'Female'}]}]
 # algorithms = ['Disparate Impact Remover', 'Reweighing', 'Adversarial Debiasing', 'Prejudice Remover',
 #               'Calibrated Equality of Odds']
-
-algorithms = ['Prejudice Remover']
+algorithms = ['Calibrated Equality of Odds']
 biased_data = {
     'disparate_impact': [
         {
