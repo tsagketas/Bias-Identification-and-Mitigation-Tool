@@ -443,16 +443,22 @@ def reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_ca
     return results, model_metrics
 
 
-def apply_adversarial_debiasing_and_train_model(X, y, protected_attributes):
+def apply_adversarial_debiasing_and_train_model(X, y, protected_attributes, att, label_encoders, intersectional,
+                                                intersection_att):
     # Split the data into training and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
     test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
 
-    pr = PrejudiceRemover(eta=25.0)
-    pr.fit(train_bld)
-    pred_bld = pr.predict(test_bld)
+    privildged_group, unprivileged_group = get_privildged_group(att, label_encoders, intersectional, intersection_att)
+
+    sess = tf.Session()
+    adv_debias = AdversarialDebiasing(privileged_groups=privildged_group,
+                                      unprivileged_groups=unprivileged_group,
+                                      scope_name='adv_debiasing', sess=sess, num_epochs=50)
+    adv_debias.fit(train_bld)
+    pred_bld = adv_debias.predict(test_bld)
 
     y_pred = pred_bld.labels
 
@@ -479,7 +485,10 @@ def adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_cal
                 # Apply Prejudice Remover and train model
 
                 X_test, y_test, y_pred, model_metrics = apply_adversarial_debiasing_and_train_model(X, y,
-                                                                                                    protected_attributes)
+                                                                                                    protected_attributes,
+                                                                                                    att, label_encoders,
+                                                                                                    True,
+                                                                                                    intersection_att)
 
                 ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred,
                                                                               protected_attributes)
@@ -490,7 +499,10 @@ def adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_cal
         else:
             # Apply Prejudice Remover and train model
             X_test, y_test, y_pred, model_metrics = apply_adversarial_debiasing_and_train_model(X, y,
-                                                                                                protected_attributes)
+                                                                                                protected_attributes,
+                                                                                                att, label_encoders,
+                                                                                                False,
+                                                                                                [])
 
             ground_truth_dataset, predicted_dataset = get_binary_datasets(X_test, y_test, y_pred, protected_attributes)
             results.extend(calculate_standard_metrics(att, ground_truth_dataset, predicted_dataset, label_encoders,

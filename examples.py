@@ -238,7 +238,10 @@ def mitigate(dataset_name, algorithm, metrics_to_calculate):
         pred_dataset.labels = y_pred
 
         cpp = CalibratedEqOddsPostprocessing(privileged_groups=privileged_groups,
-                                             unprivileged_groups=unprivileged_groups)
+                                             unprivileged_groups=unprivileged_groups,
+                                             cost_constraint="fnr",
+                                             seed=42
+                                             )
         cpp = cpp.fit(test, pred_dataset)
         pred_cpp = cpp.predict(pred_dataset)
 
@@ -249,4 +252,3 @@ def mitigate(dataset_name, algorithm, metrics_to_calculate):
 
         return model_metrics, proccess.group_results_by_metric(get_structured_info(dataset_name, metric,
                                                                                    metrics_to_calculate))
-
