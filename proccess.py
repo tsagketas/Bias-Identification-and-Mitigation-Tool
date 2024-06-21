@@ -445,7 +445,7 @@ def reweighing_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_ca
 
 def apply_adversarial_debiasing_and_train_model(X, y, protected_attributes):
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
     test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
@@ -501,7 +501,7 @@ def adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_cal
 
 def apply_prejudice_remover_and_train_model(X, y, protected_attributes):
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
     test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
@@ -558,7 +558,7 @@ def apply_calibrated_eq_odds_and_train_model(X, y, model_name, protected_attribu
                                              intersectional=False,
                                              intersection_att=[]):
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     privildged_group, unprivildged_group = get_privildged_group(att, label_encoders, intersectional,
                                                                 intersection_att)

@@ -65,7 +65,7 @@ def Choose_att():
 
 @app.route('/example/<dataset>', methods=['GET', 'POST'])
 def example(dataset):
-    app.config["DATASET"] = "example"
+    app.config["DATASET"] = dataset
     return render_template('example_att.html', data=expls.get_example_attributes(dataset))
 
 
@@ -116,21 +116,28 @@ def algorithms():
         return render_template("algorithms.html", algorithms=constants.mitigation_algorithms,
                                description=constants.mitigation_algorithms_descr)
     else:
-        return render_template("algorithms.html", algorithms=mitigation_example_algorithms,
-                               description=mitigation_example_algorithms_descr)
+        return render_template("algorithms.html", algorithms=constants.mitigation_example_algorithms,
+                               description=constants.mitigation_example_algorithms_descr)
 
 
 @app.route('/mitigation_report', methods=['GET', 'POST'])
 def mitigation_report():
     app.config['Algorithms'] = request.form.getlist('algorithms')
 
-    data = prcs.get_mitigated_results(app.config['UPLOADED_FILE'],
-                                      app.config['SELECTED_MODEL'],
-                                      app.config['atts_n_values_picked'],
-                                      app.config['Algorithms'],
-                                      app.config['DATA'],
-                                      app.config['MODEL_DATA'],
-                                      app.config['Threshold'])
+    if app.config["DATASET"] == "upload":
+        data = prcs.get_mitigated_results(app.config['UPLOADED_FILE'],
+                                          app.config['SELECTED_MODEL'],
+                                          app.config['atts_n_values_picked'],
+                                          app.config['Algorithms'],
+                                          app.config['DATA'],
+                                          app.config['MODEL_DATA'],
+                                          app.config['Threshold'])
+    else:
+        data = expls.get_mitigated_results(app.config["DATASET"],
+                                           app.config['Metrics'],
+                                           app.config['Algorithms'],
+                                           app.config['DATA'],
+                                           app.config['MODEL_DATA'])
 
     return render_template("mitigation_report.html", data=data, threshold=app.config['Threshold'])
 
