@@ -38,7 +38,7 @@ from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing, EqO
 # Disable warnings for cleaner output
 warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
-
+mitigation = False
 # Function to prepare the data
 def prepare_data(path_to_csv):
     df = pd.read_csv(path_to_csv)
@@ -260,6 +260,9 @@ def group_results_by_metric(results):
 
 # Function to check fairness
 def fair_check(metric_value, metric_name, threshold):
+    if mitigation:
+        return False
+
     ideal_value = 1 if metric_name in ['disparate_impact'] else 0
 
     try:
@@ -641,6 +644,9 @@ def calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metri
 
 def get_mitigated_results(path_to_csv, model_name, atts_n_vals_picked, algorithms, biased_data, biased_model_data,
                           threshold):
+    global mitigation  # Declare the global variable
+    mitigation = True  # Set mitigation to True
+
     metrics_to_calculate = list(biased_data.keys())
     results = {}
     for algorithm in algorithms:

@@ -5,3 +5,5 @@ check prejude remover why fails
 also show if nan at reports why nan
 
 check the whole logic ( test other datasets, the proccess)
+
+add to the mitigation flag for the fair_check function
