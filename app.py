@@ -21,7 +21,6 @@ global protected_variables, fairness_metrics, mitigation_algorithms, protected_v
 @app.route('/')
 def index():
     import flask
-    print(flask.__version__)
     return render_template('index.html')
 
 

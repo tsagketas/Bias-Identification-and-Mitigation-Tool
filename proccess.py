@@ -73,9 +73,9 @@ def train_model(model_name, X_train, y_train, weights=None):
     if model_name == "logistic_regression":
         model = LogisticRegression(solver='liblinear')
     elif model_name == "naive_bayes":
-        model = GaussianNB()
+        model = GaussianNB(var_smoothing=[1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3])
     elif model_name == "random_forest":
-        model = RandomForestClassifier()
+        model = RandomForestClassifier(n_estimators=100, bootstrap=True)
     elif model_name == "svm":
         model = SVC(probability=True)
     else:
@@ -220,6 +220,63 @@ def calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset
     return results
 
 
+def get_reason(metric_name, value):
+    if value is None or value == "inf":
+        reasons = {
+            "mean_difference": {
+                "formula": "P(outcome = 1 | unprivileged) - P(outcome = 1 | privileged)",
+                "reason": "If the probability of the outcome for either group is zero or if there is missing data.",
+                # "data": {
+                #     "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
+                #     "privileged_rate": calculate_rate(tp_priv, fn_priv)
+                # }
+            },
+            "disparate_impact": {
+                "formula": "P(outcome = 1 | unprivileged) / P(outcome = 1 | privileged)",
+                "reason": "If the probability for the privileged group is zero, or if probabilities are undefined due to missing data.",
+                # "data": {
+                #     "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
+                #     "privileged_rate": calculate_rate(tp_priv, fn_priv)
+                # }
+            },
+            "equal_opportunity_difference": {
+                "formula": "TPR(unprivileged) - TPR(privileged)",
+                "reason": "If the True Positive Rate (TPR) for either group is zero and the other is non-zero, or if there is missing data.",
+                # "data": {
+                #     "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
+                #     "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
+                # }
+            },
+            "average_odds_difference": {
+                "formula": "0.5 * [(FPR(unprivileged) - FPR(privileged)) + (TPR(unprivileged) - TPR(privileged))]",
+                "reason": "If either the False Positive Rate (FPR) or True Positive Rate (TPR) for any group is zero and the other is non-zero, or if there is missing data.",
+                # "data": {
+                #     "unprivileged_fpr": calculate_fpr(fp_unpriv, tn_unpriv),
+                #     "privileged_fpr": calculate_fpr(fp_priv, tn_priv),
+                #     "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
+                #     "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
+                # }
+            },
+            "theil_index": {
+                "formula": "1/N * sum((yi / y_mean) * log(yi / y_mean))",
+                "reason": "If the mean of all values is zero, or if any individual value is zero, or if there is missing data.",
+                # "data": {
+                #     "values": [tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv],
+                #     "mean": np.mean([tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv])
+                # }
+            }
+        }
+
+        reason_info = reasons.get(metric_name, {"formula": "Unknown", "reason": "Unknown reason", "data": {}})
+        return {
+            "Reason": reason_info["reason"],
+            "Formula": reason_info["formula"],
+            "Data to explain why the above metric is none or inf": reason_info["data"]
+        }
+    else:
+        return []
+
+
 # Function to construct metric information
 def construct_metric_info(metric_name, metric_value, protected_attributes, privileged_group, unprivileged_group,
                           intersectional_attributes=None):
@@ -229,7 +286,8 @@ def construct_metric_info(metric_name, metric_value, protected_attributes, privi
         'Values': metric_value,
         'Privileged_Group': privileged_group,
         'Unprivileged_Group': unprivileged_group,
-        'Intersectional_Attributes': intersectional_attributes if intersectional_attributes else []
+        'Intersectional_Attributes': intersectional_attributes if intersectional_attributes else [],
+        'Reason': get_reason(metric_name, metric_value)
     }
     return info
 
@@ -315,26 +373,31 @@ def mitigate(algorithm, path_to_csv, model_name, atts_n_vals_picked, threshold, 
 
 
 def apply_dir_and_train_model(X, y, model_name, protected_attributes, intersectional=False):
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
     # Convert to binary label dataset
-    bld = convert_to_binary_label_dataset(X, y, protected_attributes)
+    X_train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
+    X_test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
 
     # Apply Disparate Impact Remover (DIR)
     dir = DisparateImpactRemover(**({'sensitive_attribute': protected_attributes[0]} if not intersectional else {}),
-                                 repair_level=0.5)
+                                 repair_level=1)
 
-    bld_repaired = dir.fit_transform(bld)
+    X_train_repaired = dir.fit_transform(X_train_bld)
+    X_test_repaired = dir.fit_transform(X_test_bld)
 
-    # Convert back to dataframe
-    X_repaired = pd.DataFrame(bld_repaired.features, columns=X.columns)
-    y_repaired = pd.Series(bld_repaired.labels.ravel(), name='outcome')
+    # Convert back to dataframes
+    X_train_repaired_df = pd.DataFrame(X_train_repaired.features, columns=X_train.columns)
+    y_train_repaired = pd.Series(X_train_repaired.labels.ravel(), name='outcome')
 
-    # Split the repaired data
-    X_train, X_test, y_train, y_test = train_test_split(X_repaired, y_repaired, test_size=0.2, random_state=42)
+    X_test_repaired_df = pd.DataFrame(X_test_repaired.features, columns=X_test.columns)
+    y_test_repaired = pd.Series(X_test_repaired.labels.ravel(), name='outcome')
 
     # Train the model on repaired data
-    model = train_model(model_name, X_train, y_train)
+    model = train_model(model_name, X_train_repaired_df, y_train_repaired)
 
-    model_metrics, y_pred = calculate_model_metrics(model, X_test, y_test)
+    model_metrics, y_pred = calculate_model_metrics(model, X_test_repaired_df, y_test_repaired)
 
     return model, X_test, y_test, y_pred, model_metrics
 
@@ -456,6 +519,7 @@ def apply_adversarial_debiasing_and_train_model(X, y, protected_attributes, att,
 
     privildged_group, unprivileged_group = get_privildged_group(att, label_encoders, intersectional, intersection_att)
 
+    tf.reset_default_graph()
     sess = tf.Session()
     adv_debias = AdversarialDebiasing(privileged_groups=privildged_group,
                                       unprivileged_groups=unprivileged_group,
@@ -521,7 +585,7 @@ def apply_prejudice_remover_and_train_model(X, y, protected_attributes):
     train_bld = convert_to_binary_label_dataset(X_train, y_train, protected_attributes)
     test_bld = convert_to_binary_label_dataset(X_test, y_test, protected_attributes)
 
-    pr = PrejudiceRemover(eta=25.0)
+    pr = PrejudiceRemover(eta=0.0)
     pr.fit(train_bld)
     pred_bld = pr.predict(test_bld)
 
@@ -644,8 +708,8 @@ def calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metri
 
 def get_mitigated_results(path_to_csv, model_name, atts_n_vals_picked, algorithms, biased_data, biased_model_data,
                           threshold):
-    global mitigation  # Declare the global variable
-    mitigation = True  # Set mitigation to True
+    global mitigation
+    mitigation = True
 
     metrics_to_calculate = list(biased_data.keys())
     results = {}

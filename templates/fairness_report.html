@@ -147,7 +147,7 @@
         </div>
     </div>
 
-    {% if metric and metric_data %}
+    {% if data and data.items()|length > 0 %}
 
         <div class="container table-container">
             {% for metric, metric_data in data.items() %}
