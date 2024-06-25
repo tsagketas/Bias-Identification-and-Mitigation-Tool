@@ -1,2 +1,0 @@
-Original mean difference: -0.1032903823602481
-Repaired mean difference: -0.003197489159720429

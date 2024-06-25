@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Your existing styles here */
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="jumbotron">
+        <h1 class="display-4">Select Protected Attributes</h1>
+        <p class="lead">Our approach assumes pre-defined favorable and unfavorable values for the attributes we're
+            considering. There's no need to specifically target individual attributes for bias mitigation during
+            processing</p>
+        <hr class="my-4">
+        <img class="image" src="{{ url_for('static', filename='Images/chain_2.png') }}" alt="Process Illustration">
+    </div>
+
+    <div class="form-container">
+        <h5>Select protected attributes to be audited for bias:</h5>
+        <br>
+        <form id="attributeForm">
+            <table class="table table-bordered table-striped" id="table">
+                <thead>
+                <tr>
+                    <th style="width: 220px;">Protected Attribute</th>
+                    <th>Privileged Group and Unprivileged Group Information</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for attribute in data %}
+                    <tr id="{{ attribute.name }}">
+                        <td style="text-align: center;">
+                            <input name="attribute" type="checkbox" value="{{ attribute.name }}" checked>
+                            {{ attribute.name | capitalize }}
+                        </td>
+                        <td>
+                            {% for value in attribute.values %}
+                                {{ value }}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <div class="text-center mt-4">
+                <button class="btn btn-primary" id="submitButton" type="button">Next Step</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#submitButton').click(function () {
+                var atts_n_values_picked = [];
+                $('input[name="attribute"]:checked').each(function () {
+                    atts_n_values_picked.push($(this).val());
+                });
+
+                $.ajax({
+                    url: '{{ url_for("metric") }}',
+                    type: 'POST',
+                    contentType: 'application/json; charset=UTF-8',
+                    data: JSON.stringify(atts_n_values_picked),
+                    success: function (response) {
+                        console.log(atts_n_values_picked);
+                        window.location.href = "/metric"; // Redirect to the metric page
+                    },
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -71,7 +71,7 @@ def encode_categorical_variables(df):
 # Function to train the selected model
 def train_model(model_name, X_train, y_train, weights=None):
     if model_name == "logistic_regression":
-        model = LogisticRegression()
+        model = LogisticRegression(solver='liblinear')
     elif model_name == "naive_bayes":
         model = GaussianNB()
     elif model_name == "random_forest":
@@ -308,7 +308,7 @@ def mitigate(algorithm, path_to_csv, model_name, atts_n_vals_picked, threshold, 
         return adversarial_debiasing_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold)
     elif algorithm == "Prejudice Remover":
         return prejudice_remover_result(path_to_csv, atts_n_vals_picked, metrics_to_calculate, threshold)
-    elif algorithm == "Calibrated Equality of Odds":
+    elif algorithm == "Calibrated equalized Odds":
         return calibrated_eq_odds_result(path_to_csv, model_name, atts_n_vals_picked, metrics_to_calculate, threshold)
     else:
         return [], []
