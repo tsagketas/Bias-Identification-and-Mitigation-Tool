@@ -57,11 +57,5 @@ mitigation_algorithms_descr = [
     "Reweighing: This technique assigns weights to data points to balance the representation of different groups. For example, if a dataset has more data from the privileged group, reweighing can increase the weight of data points from the unprivileged group during training.",
     "Adversarial Debiasing: This approach trains two models simultaneously. One model predicts the outcome, while the other tries to remove bias from the first model's predictions. They compete with each other, ultimately leading to a fairer model.",
     # "Prejudice Remover Impact Remover: Modifies the learning algorithm to reduce prejudice.",
-    "Calibrated Equality of Odds: This method adjusts the model's output probabilities to ensure equal odds for both privileged and unprivileged groups across different outcome categories."
+    "Calibrated equalized Odds: This method adjusts the model's output probabilities to ensure equal odds for both privileged and unprivileged groups across different outcome categories."
 ]
-
-
-metrics_picked = []
-algorithms_picked = []
-values_picked = []
-atts_picked = []

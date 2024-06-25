@@ -2,6 +2,9 @@
 
 {% block head %}
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <style>
         .jumbotron {
             text-align: center;
@@ -139,17 +142,13 @@
                 {% endfor %}
                 </tbody>
             </table>
-            {% if not dataset %}
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Enter your Fairness Threshold (%)</span>
-                    </div>
-                    <input class="col-1 form-control" id="threshold" name="threshold" type="text">
-                    <span class="input-group-text">If a specific bias metric for a group is within this percentage of the reference group, this audit will pass</span>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Enter your Fairness Threshold (%)</span>
                 </div>
-            {% else %}
-                <input hidden class="col-1 form-control" id="threshold" name="threshold" type="text" value="0">
-            {% endif %}
+                <input class="col-1 form-control" id="threshold" name="threshold" type="text" placeholder="80">
+                <span class="input-group-text">If a specific bias metric for a group is within this percentage of the reference group, this audit will pass</span>
+            </div>
             <div class="text-center mt-4">
                 <button class="btn btn-primary" id="button" type="submit">Next Step</button>
             </div>
@@ -203,7 +202,7 @@
                                     "name": "Small Percentage of Population",
                                     "type": "Scope",
                                     "description": "Intervention applies to a limited group.",
-                                    "metrics": ["false_positive_rate_difference"],
+                                    "metrics": ["equal_opportunity_difference"],
                                     "children": []
                                 },
                                 {
@@ -211,7 +210,7 @@
                                     "name": "Large Percentage of Population",
                                     "type": "Scope",
                                     "description": "Intervention applies to a significant group.",
-                                    "metrics": ["disparate_impact", "false_positive_rate_difference"],
+                                    "metrics": ["disparate_impact", "equal_opportunity_difference"],
                                     "children": []
                                 }
                             ]
@@ -227,7 +226,7 @@
                                     "name": "Small Percentage of Population",
                                     "type": "Scope",
                                     "description": "Intervention applies to a limited group.",
-                                    "metrics": ["false_omission_rate_difference"],
+                                    "metrics": ["average_odds_difference"],
                                     "children": []
                                 },
                                 {
@@ -235,7 +234,7 @@
                                     "name": "Large Percentage of Population",
                                     "type": "Scope",
                                     "description": "Intervention applies to a significant group.",
-                                    "metrics": ["mean_difference"],
+                                    "metrics": ["mean_difference", "theil_index"],
                                     "children": []
                                 }
                             ]
@@ -261,7 +260,7 @@
                 return data.name;
             })
             .on("nodeClick", function (event) {
-                var allMetrics = ['disparate_impact', 'mean_difference', 'false_positive_rate_difference', 'false_omission_rate_difference', 'false_discovery_rate_difference', 'false_negative_rate_difference'];
+                var allMetrics = ['mean_difference', 'disparate_impact', 'equal_opportunity_difference', 'average_odds_difference', 'theil_index'];
 
                 // Show all metrics initially
                 allMetrics.forEach(metric => {
@@ -283,6 +282,8 @@
             $("#dropGuide").click(function () {
                 $("#guide").prop("hidden", !$("#guide").prop("hidden"));
             });
+            // Set input value to its placeholder value on page load
+            $("#threshold").val($("#threshold").attr("placeholder"));
         });
     </script>
 {% endblock %}

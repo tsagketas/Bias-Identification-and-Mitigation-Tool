@@ -147,76 +147,88 @@
         </div>
     </div>
 
+    {% if metric and metric_data %}
 
-    <div class="container table-container">
-        {% for metric, metric_data in data.items() %}
-            <div class="row steps">
-                <div class="col-md-6">
-                    <div class="metric-table">
-                        <table class="table table-bordered">
-                            <thead>
-                            <tr>
-                                <th colspan="{{ metric_data|length + 1 }}" class="text-center"
-                                    style="background-color: #f8f9fa;">
-                                    <h4 style="color: #6c757d;">{{ metric.replace('_', ' ').title() }}</h4>
-                                    <div class="table-subtitle" style="color: #6c757d;">The ideal value of this metric
-                                        is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
-                                </th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>Protected Attributes</td>
-                                {% for el in metric_data %}
-                                    <td>{{ el['Protected_Attributes'] | join(', ') }}</td>
-                                {% endfor %}
-                            </tr>
-                            <tr>
-                                <td>Privileged Group</td>
-                                {% for el in metric_data %}
-                                    <td>
-                                        {{ el['Privileged_Group'] }}
-                                        {% for attr in el['Intersectional_Attributes'] %}
-                                            {{ attr['privileged'] }}
-                                        {% endfor %}
-                                    </td>
-                                {% endfor %}
-                            </tr>
-                            <tr>
-                                <td>Unprivileged Group</td>
-                                {% for el in metric_data %}
-                                    <td>
-                                        {{ el['Unprivileged_Group'] }}
-                                        {% for attr in el['Intersectional_Attributes'] %}
-                                            {{ attr['unprivileged'] }}
-                                        {% endfor %}
-                                    </td>
-                                {% endfor %}
-                            </tr>
-                            <tr>
-                                <td>Metric Value</td>
-                                {% for el in metric_data %}
-                                    <td>{{ '%.4f' | format(el['Values']) }}</td>
-                                {% endfor %}
-                            </tr>
-                            </tbody>
-                        </table>
+        <div class="container table-container">
+            {% for metric, metric_data in data.items() %}
+                <div class="row steps">
+                    <div class="col-md-6">
+                        <div class="metric-table">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th colspan="{{ metric_data|length + 1 }}" class="text-center"
+                                        style="background-color: #f8f9fa;">
+                                        <h4 style="color: #6c757d;">{{ metric.replace('_', ' ').title() }}</h4>
+                                        <div class="table-subtitle" style="color: #6c757d;">The ideal value of this
+                                            metric
+                                            is {{ metric_data[0]['Ideal_Fairness_Value'] }}</div>
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>Protected Attributes</td>
+                                    {% for el in metric_data %}
+                                        <td>{{ el['Protected_Attributes'] | join(', ') }}</td>
+                                    {% endfor %}
+                                </tr>
+                                <tr>
+                                    <td>Privileged Group</td>
+                                    {% for el in metric_data %}
+                                        <td>
+                                            {{ el['Privileged_Group'] }}
+                                            {% for attr in el['Intersectional_Attributes'] %}
+                                                {{ attr['privileged'] }}
+                                            {% endfor %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                <tr>
+                                    <td>Unprivileged Group</td>
+                                    {% for el in metric_data %}
+                                        <td>
+                                            {{ el['Unprivileged_Group'] }}
+                                            {% for attr in el['Intersectional_Attributes'] %}
+                                                {{ attr['unprivileged'] }}
+                                            {% endfor %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                <tr>
+                                    <td>Metric Value</td>
+                                    {% for el in metric_data %}
+                                        <td>{{ '%.4f' | format(el['Values']) }}</td>
+                                    {% endfor %}
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <canvas id="chart-{{ loop.index }}"
+                                    class="rounded float-right chartjs-size-monitor"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <canvas id="chart-{{ loop.index }}" class="rounded float-right chartjs-size-monitor"></canvas>
-                    </div>
-                </div>
+                <br>
+            {% endfor %}
+        </div>
+        <div style="height: 100px; position: relative;">
+            <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);"
+               class="btn btn-primary btn-lg" href="{{ url_for('algorithms') }}" role="button">Next Step</a>
+        </div>
+    {% else %}
+        <div style="text-align: center; margin-top: 50px;">
+            <h2 class="display-4" style="margin-top: 20px; color: #6c757d;">Congratulations! Your model seems fair!</h2>
+            <img style="width: 20%;" src="{{ url_for('static', filename='images/success512.png') }}" alt="Success">
+            <div style="height: 100px; position: relative;">
+                <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);"
+                   class="btn btn-primary btn-lg" href="{{ url_for('selection') }}" role="button">Go Back</a>
             </div>
-            <br>
-        {% endfor %}
-    </div>
-    <div style="height: 100px; position: relative;">
-        <a style="margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%);"
-           class="btn btn-primary btn-lg" href="{{ url_for('algorithms') }}" role="button">Next Step</a>
-    </div>
-
+        </div>
+    {% endif %}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const threshold = {{ threshold | tojson }} / 100;

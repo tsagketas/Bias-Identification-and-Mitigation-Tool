@@ -220,54 +220,51 @@ def calculate_intersectional_metrics(att, intersection_att, ground_truth_dataset
     return results
 
 
-def get_reason(metric_name):
-    cm_components = calculate_confusion_matrix_components(df, protected_attribute, privileged_group, unprivileged_group)
-    fp_priv, fn_priv, tn_priv, tp_priv = cm_components['privileged']
-    fp_unpriv, fn_unpriv, tn_unpriv, tp_unpriv = cm_components['unprivileged']
+def get_reason(metric_name,value):
 
     if value is None or value == "inf":
         reasons = {
             "mean_difference": {
                 "formula": "P(outcome = 1 | unprivileged) - P(outcome = 1 | privileged)",
                 "reason": "If the probability of the outcome for either group is zero or if there is missing data.",
-                "data": {
-                    "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
-                    "privileged_rate": calculate_rate(tp_priv, fn_priv)
-                }
+                # "data": {
+                #     "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
+                #     "privileged_rate": calculate_rate(tp_priv, fn_priv)
+                # }
             },
             "disparate_impact": {
                 "formula": "P(outcome = 1 | unprivileged) / P(outcome = 1 | privileged)",
                 "reason": "If the probability for the privileged group is zero, or if probabilities are undefined due to missing data.",
-                "data": {
-                    "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
-                    "privileged_rate": calculate_rate(tp_priv, fn_priv)
-                }
+                # "data": {
+                #     "unprivileged_rate": calculate_rate(tp_unpriv, fn_unpriv),
+                #     "privileged_rate": calculate_rate(tp_priv, fn_priv)
+                # }
             },
             "equal_opportunity_difference": {
                 "formula": "TPR(unprivileged) - TPR(privileged)",
                 "reason": "If the True Positive Rate (TPR) for either group is zero and the other is non-zero, or if there is missing data.",
-                "data": {
-                    "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
-                    "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
-                }
+                # "data": {
+                #     "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
+                #     "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
+                # }
             },
             "average_odds_difference": {
                 "formula": "0.5 * [(FPR(unprivileged) - FPR(privileged)) + (TPR(unprivileged) - TPR(privileged))]",
                 "reason": "If either the False Positive Rate (FPR) or True Positive Rate (TPR) for any group is zero and the other is non-zero, or if there is missing data.",
-                "data": {
-                    "unprivileged_fpr": calculate_fpr(fp_unpriv, tn_unpriv),
-                    "privileged_fpr": calculate_fpr(fp_priv, tn_priv),
-                    "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
-                    "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
-                }
+                # "data": {
+                #     "unprivileged_fpr": calculate_fpr(fp_unpriv, tn_unpriv),
+                #     "privileged_fpr": calculate_fpr(fp_priv, tn_priv),
+                #     "unprivileged_tpr": calculate_tpr(tp_unpriv, fn_unpriv),
+                #     "privileged_tpr": calculate_tpr(tp_priv, fn_priv)
+                # }
             },
             "theil_index": {
                 "formula": "1/N * sum((yi / y_mean) * log(yi / y_mean))",
                 "reason": "If the mean of all values is zero, or if any individual value is zero, or if there is missing data.",
-                "data": {
-                    "values": [tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv],
-                    "mean": np.mean([tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv])
-                }
+                # "data": {
+                #     "values": [tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv],
+                #     "mean": np.mean([tp_priv, fn_priv, tn_priv, fp_priv, tp_unpriv, fn_unpriv, tn_unpriv, fp_unpriv])
+                # }
             }
         }
 
@@ -291,7 +288,7 @@ def construct_metric_info(metric_name, metric_value, protected_attributes, privi
         'Privileged_Group': privileged_group,
         'Unprivileged_Group': unprivileged_group,
         'Intersectional_Attributes': intersectional_attributes if intersectional_attributes else [],
-        'Reason': get_reason(metric_name)
+        'Reason': get_reason(metric_name,metric_value)
     }
     return info
 
@@ -819,7 +816,7 @@ unbiased_data = {
 }
 
 # Example usage:
-path_to_csv = "adult.csv"
+path_to_csv = "datasets//adult.csv"
 threshold = "80"
 model_name = "random_forest"
 atts_n_vals_picked = [{'attribute': 'gender', 'privileged': 'Male', 'unprivileged': 'Female', 'intersection': []},
