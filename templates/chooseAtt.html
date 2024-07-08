@@ -218,7 +218,7 @@
             privilegedSelect.change(function () {
                 var selectedPrivileged = $(this).val();
                 unprivilegedSelect.find('option').show();
-                unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();
+                {#unprivilegedSelect.find(`option[value="${selectedPrivileged}"]`).hide();#}
             });
         });
         updateIntersectionOptions(attribute, $newRow);
