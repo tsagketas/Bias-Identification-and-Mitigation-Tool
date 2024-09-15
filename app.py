@@ -11,7 +11,7 @@ import att_values
 import constants
 
 app = Flask(__name__, template_folder='templates')
-app.config['FILES_UPLOADS'] = r'C:\Users\ceid6\Desktop\diplomatiki\static\Uploaded_files'
+app.config['FILES_UPLOADS'] = '/app/static/Uploaded_files'
 TEMPLATES_AUTO_RELOAD = True
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
@@ -23,6 +23,9 @@ def index():
     import flask
     return render_template('index.html')
 
+@app.route('/info')
+def info():
+    return render_template('info.html')
 
 @app.route('/selection', methods=['GET', 'POST'])
 def selection():
@@ -142,4 +145,4 @@ def mitigation_report():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

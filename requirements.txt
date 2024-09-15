@@ -8,3 +8,5 @@ aif360[inFairness,LawSchoolGPA,Reductions]
 h5py==2.10.0
 seaborn
 BlackBoxAuditing
+Jinja2==2.11.3
+MarkupSafe==2.0.1
