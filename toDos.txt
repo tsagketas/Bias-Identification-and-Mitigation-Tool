@@ -1,8 +1,0 @@
-add page if the fairness_report has no metric displayed
-
-check prejude remover why fails -- maybe remove it
-
-also show if nan at reports why nan
-
-check the whole logic ( test other datasets, the proccess)
-
